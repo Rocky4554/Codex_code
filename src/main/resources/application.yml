@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: codex-platform
+
+  # PostgreSQL Configuration (Supabase)
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:codex}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # Redis Configuration (Redisson)
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+
+# Redisson Configuration
+redisson:
+  single-server-config:
+    address: "redis://${REDIS_HOST:localhost}:${REDIS_PORT:6379}"
+    password: ${REDIS_PASSWORD:}
+    connection-pool-size: 64
+    connection-minimum-idle-size: 10
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production-must-be-at-least-256-bits}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+
+# Execution Configuration
+execution:
+  docker:
+    host: ${DOCKER_HOST:unix:///var/run/docker.sock}
+    # For Windows: tcp://localhost:2375
+  temp-dir: ${TEMP_DIR:/tmp/codex}
+  default-time-limit-ms: 5000
+  default-memory-limit-mb: 256
+  cleanup-enabled: true
+
+# Server Configuration
+server:
+  port: ${PORT:8080}
+
+# Logging
+logging:
+  level:
+    com.codex.platform: ${LOG_LEVEL:INFO}
+    org.springframework.security: ${LOG_LEVEL:INFO}
