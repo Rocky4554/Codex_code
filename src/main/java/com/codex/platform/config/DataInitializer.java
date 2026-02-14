@@ -29,7 +29,20 @@ public class DataInitializer implements CommandLineRunner {
 
         if (problemRepository.count() == 0) {
             initializeSampleProblems();
+        } else {
+            synchronizeTimeLimits();
         }
+    }
+
+    private void synchronizeTimeLimits() {
+        log.info("Synchronizing time limits to 5s...");
+        problemRepository.findAll().forEach(problem -> {
+            if (problem.getTimeLimitMs() != 5000) {
+                problem.setTimeLimitMs(5000);
+                problemRepository.save(problem);
+                log.info("Updated time limit for problem: {} to 5s", problem.getTitle());
+            }
+        });
     }
 
     private void initializeLanguages() {
@@ -49,7 +62,7 @@ public class DataInitializer implements CommandLineRunner {
         Language java = new Language();
         java.setName("Java");
         java.setVersion("17");
-        java.setDockerImage("openjdk:17-slim");
+        java.setDockerImage("eclipse-temurin:17-jdk");
         java.setFileExtension(".java");
         java.setCompileCommand("javac solution.java");
         java.setExecuteCommand("java solution");
@@ -111,7 +124,7 @@ public class DataInitializer implements CommandLineRunner {
         helloWorld.setTitle("Hello World");
         helloWorld.setDescription("Print 'Hello, World!' to the console.");
         helloWorld.setDifficulty(ProblemDifficulty.EASY);
-        helloWorld.setTimeLimitMs(2000);
+        helloWorld.setTimeLimitMs(5000);
         helloWorld.setMemoryLimitMb(128);
         Problem savedHelloWorld = problemRepository.save(helloWorld);
 

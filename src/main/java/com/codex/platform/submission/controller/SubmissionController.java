@@ -1,5 +1,6 @@
 package com.codex.platform.submission.controller;
 
+import com.codex.platform.submission.dto.SubmissionResponse;
 import com.codex.platform.submission.dto.SubmitCodeRequest;
 import com.codex.platform.submission.dto.SubmitCodeResponse;
 import com.codex.platform.submission.service.SubmissionService;
@@ -8,6 +9,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/submissions")
@@ -21,5 +24,10 @@ public class SubmissionController {
             @Valid @RequestBody SubmitCodeRequest request,
             HttpServletRequest httpRequest) {
         return ResponseEntity.ok(submissionService.submitCode(request, httpRequest));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SubmissionResponse> getSubmission(@PathVariable UUID id) {
+        return ResponseEntity.ok(submissionService.getSubmission(id));
     }
 }

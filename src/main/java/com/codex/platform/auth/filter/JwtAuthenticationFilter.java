@@ -14,6 +14,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -35,16 +37,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 if (jwtUtil.validateToken(token)) {
                     String username = jwtUtil.extractUsername(token);
+                    UUID userId = jwtUtil.extractUserId(token);
 
-                    // Create authentication object
+                    // Store both username and userId so downstream code
+                    // can read userId from SecurityContext instead of re-parsing the JWT
+                    Map<String, Object> principal = Map.of(
+                            "username", username,
+                            "userId", userId);
+
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            username,
+                            principal,
                             null,
                             new ArrayList<>());
 
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    // Set authentication in SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             } catch (Exception e) {
@@ -54,5 +61,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Utility: extract userId from the current SecurityContext.
+     * Call this from any service or controller instead of re-parsing the JWT.
+     */
+    @SuppressWarnings("unchecked")
+    public static UUID getCurrentUserId() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Map) {
+            Map<String, Object> principal = (Map<String, Object>) auth.getPrincipal();
+            return (UUID) principal.get("userId");
+        }
+        throw new IllegalStateException("No authenticated user in SecurityContext");
     }
 }

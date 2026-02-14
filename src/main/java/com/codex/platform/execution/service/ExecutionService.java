@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,10 +36,15 @@ public class ExecutionService {
     private final SseService sseService;
 
     /**
-     * Main entry point for executing a submission
+     * Main entry point for executing a submission.
+     * Uses a SINGLE container for the entire submission — compile once, run all
+     * test cases.
      */
     public void executeSubmission(UUID submissionId) {
         log.info("Starting execution for submission: {}", submissionId);
+
+        String containerId = null;
+        Path tempDir = null;
 
         try {
             // Load submission
@@ -47,8 +53,6 @@ public class ExecutionService {
 
             // Send RUNNING event
             sseService.sendEvent(submissionId, SubmissionStatus.RUNNING);
-
-            // Update status to RUNNING
             submission.setStatus(SubmissionStatus.RUNNING);
             submissionRepository.save(submission);
 
@@ -60,66 +64,93 @@ public class ExecutionService {
                     .orElseThrow(() -> new IllegalArgumentException("Language not found"));
 
             List<TestCase> testCases = testCaseRepository.findByProblemId(problem.getId());
-
             if (testCases.isEmpty()) {
                 throw new IllegalArgumentException("No test cases found for problem");
             }
 
-            // Execute test cases
-            SubmissionStatus finalStatus = SubmissionStatus.ACCEPTED;
+            // ── Single Container Lifecycle ──────────────────────────────
+            // 1. Prepare workspace (write source file to temp dir)
+            tempDir = dockerExecutor.prepareTempDirectory(
+                    submission.getSourceCode(),
+                    "solution" + language.getFileExtension());
+
+            // 2. Create and start ONE container
+            containerId = dockerExecutor.createAndStartContainer(
+                    language.getDockerImage(),
+                    tempDir,
+                    problem.getMemoryLimitMb());
+
+            // 3. Compile once (returns null on success, error result on failure)
+            ExecutionResult compileError = dockerExecutor.compileInContainer(
+                    containerId,
+                    language.getCompileCommand());
+
+            SubmissionStatus finalStatus;
             int passedCount = 0;
             long totalExecutionTime = 0;
             StringBuilder stdoutBuilder = new StringBuilder();
             StringBuilder stderrBuilder = new StringBuilder();
 
-            for (TestCase testCase : testCases) {
-                log.info("Running test case: {}", testCase.getId());
+            if (compileError != null) {
+                // Compilation failed
+                finalStatus = SubmissionStatus.COMPILATION_ERROR;
+                stdoutBuilder.append(compileError.getStdout());
+                stderrBuilder.append(compileError.getStderr());
+                totalExecutionTime = compileError.getExecutionTimeMs();
+                log.warn("Compilation failed ({}ms): {}", totalExecutionTime,
+                        compileError.getStderr().length() > 200
+                                ? compileError.getStderr().substring(0, 200) + "..."
+                                : compileError.getStderr());
+            } else {
+                // 4. Run each test case in the SAME container
+                finalStatus = SubmissionStatus.ACCEPTED;
 
-                ExecutionResult result = dockerExecutor.executeCode(
-                        language.getDockerImage(),
-                        submission.getSourceCode(),
-                        "solution" + language.getFileExtension(),
-                        language.getExecuteCommand(),
-                        language.getCompileCommand(),
-                        testCase.getInput(),
-                        problem.getTimeLimitMs(),
-                        problem.getMemoryLimitMb());
+                int testIndex = 0;
+                for (TestCase testCase : testCases) {
+                    testIndex++;
+                    log.info("Running test case {}/{}: {}", testIndex, testCases.size(), testCase.getId());
 
-                totalExecutionTime += result.getExecutionTimeMs();
-                stdoutBuilder.append(result.getStdout()).append("\n");
-                stderrBuilder.append(result.getStderr()).append("\n");
+                    ExecutionResult result = dockerExecutor.runTestCase(
+                            containerId,
+                            language.getExecuteCommand(),
+                            testCase.getInput(),
+                            problem.getTimeLimitMs());
 
-                // Check for compilation error
-                if (!result.isSuccess() && language.getCompileCommand() != null) {
-                    finalStatus = SubmissionStatus.COMPILATION_ERROR;
-                    break;
-                }
+                    totalExecutionTime += result.getExecutionTimeMs();
+                    stdoutBuilder.append(result.getStdout()).append("\n");
+                    stderrBuilder.append(result.getStderr()).append("\n");
 
-                // Check for runtime error
-                if (result.getExitCode() != 0) {
-                    finalStatus = SubmissionStatus.RUNTIME_ERROR;
-                    break;
-                }
+                    // Check for runtime error
+                    if (result.getExitCode() != 0) {
+                        log.warn("  -> Test {}/{} RUNTIME_ERROR (exit code {}, {}ms)",
+                                testIndex, testCases.size(), result.getExitCode(), result.getExecutionTimeMs());
+                        finalStatus = SubmissionStatus.RUNTIME_ERROR;
+                        break;
+                    }
 
-                // Check for time limit exceeded
-                if (result.getExecutionTimeMs() > problem.getTimeLimitMs()) {
-                    finalStatus = SubmissionStatus.TIME_LIMIT_EXCEEDED;
-                    break;
-                }
+                    // Check for time limit exceeded
+                    if (result.getExecutionTimeMs() > problem.getTimeLimitMs()) {
+                        log.warn("  -> Test {}/{} TIME_LIMIT_EXCEEDED ({}ms / limit {}ms)",
+                                testIndex, testCases.size(), result.getExecutionTimeMs(), problem.getTimeLimitMs());
+                        finalStatus = SubmissionStatus.TIME_LIMIT_EXCEEDED;
+                        break;
+                    }
 
-                // Compare output
-                if (OutputNormalizer.areEqual(testCase.getExpectedOutput(), result.getStdout())) {
-                    passedCount++;
-                } else {
-                    finalStatus = SubmissionStatus.WRONG_ANSWER;
-                    log.info("Wrong answer on test case: {}", testCase.getId());
-                    log.debug("Expected: {}", testCase.getExpectedOutput());
-                    log.debug("Got: {}", result.getStdout());
-                    break;
+                    // Compare output
+                    if (OutputNormalizer.areEqual(testCase.getExpectedOutput(), result.getStdout())) {
+                        passedCount++;
+                        log.info("  -> Test {}/{} PASSED ({}ms)", testIndex, testCases.size(), result.getExecutionTimeMs());
+                    } else {
+                        finalStatus = SubmissionStatus.WRONG_ANSWER;
+                        log.warn("  -> Test {}/{} WRONG_ANSWER ({}ms)", testIndex, testCases.size(), result.getExecutionTimeMs());
+                        log.debug("     Expected: [{}]", testCase.getExpectedOutput());
+                        log.debug("     Got:      [{}]", result.getStdout());
+                        break;
+                    }
                 }
             }
 
-            // Create result
+            // Save result
             SubmissionResult submissionResult = new SubmissionResult();
             submissionResult.setSubmissionId(submissionId);
             submissionResult.setExecutionTimeMs(totalExecutionTime);
@@ -129,23 +160,28 @@ public class ExecutionService {
             submissionResult.setStdout(stdoutBuilder.toString());
             submissionResult.setStderr(stderrBuilder.toString());
 
-            // Save result
             resultProcessor.saveResult(submission, submissionResult, finalStatus);
-
-            // Send final event
             sseService.sendEvent(submissionId, finalStatus);
 
-            log.info("Execution completed for submission: {} with status: {}", submissionId, finalStatus);
+            log.info("╔══════════════════════════════════════════════════");
+            log.info("║ Submission  : {}", submissionId);
+            log.info("║ Verdict     : {}", finalStatus);
+            log.info("║ Test Cases  : {}/{} passed", passedCount, testCases.size());
+            log.info("║ Time        : {}ms (limit: {}ms)", totalExecutionTime, problem.getTimeLimitMs());
+            log.info("║ Memory      : {}MB (limit: {}MB)", submissionResult.getMemoryUsedMb(), problem.getMemoryLimitMb());
+            log.info("╚══════════════════════════════════════════════════");
 
         } catch (Exception e) {
             log.error("Error executing submission: {}", submissionId, e);
 
-            // Update submission status to error
             submissionRepository.findById(submissionId).ifPresent(submission -> {
                 submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
                 submissionRepository.save(submission);
                 sseService.sendEvent(submissionId, SubmissionStatus.RUNTIME_ERROR);
             });
+        } finally {
+            // 5. Cleanup — always runs, even on error
+            dockerExecutor.cleanup(containerId, tempDir);
         }
     }
 }

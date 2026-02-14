@@ -1,19 +1,24 @@
 package com.codex.platform.submission.service;
 
-import com.codex.platform.auth.util.JwtUtil;
+import com.codex.platform.auth.filter.JwtAuthenticationFilter;
 import com.codex.platform.common.enums.SubmissionStatus;
 import com.codex.platform.execution.repository.LanguageRepository;
 import com.codex.platform.problem.repository.ProblemRepository;
 import com.codex.platform.queue.service.QueueService;
 import com.codex.platform.submission.dto.SubmitCodeRequest;
 import com.codex.platform.submission.dto.SubmitCodeResponse;
+import com.codex.platform.submission.dto.SubmissionResponse;
 import com.codex.platform.submission.entity.Submission;
+import com.codex.platform.submission.entity.SubmissionResult;
 import com.codex.platform.submission.repository.SubmissionRepository;
+import com.codex.platform.submission.repository.SubmissionResultRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.UUID;
 
@@ -23,15 +28,15 @@ import java.util.UUID;
 public class SubmissionService {
 
     private final SubmissionRepository submissionRepository;
+    private final SubmissionResultRepository submissionResultRepository;
     private final ProblemRepository problemRepository;
     private final LanguageRepository languageRepository;
     private final QueueService queueService;
-    private final JwtUtil jwtUtil;
 
     @Transactional
     public SubmitCodeResponse submitCode(SubmitCodeRequest request, HttpServletRequest httpRequest) {
-        // Extract userId from JWT
-        UUID userId = extractUserIdFromRequest(httpRequest);
+        // Extract userId from SecurityContext (set by JwtAuthenticationFilter)
+        UUID userId = JwtAuthenticationFilter.getCurrentUserId();
 
         // Validate problem exists
         if (!problemRepository.existsById(request.getProblemId())) {
@@ -53,8 +58,15 @@ public class SubmissionService {
 
         Submission savedSubmission = submissionRepository.save(submission);
 
-        // Enqueue for processing
-        queueService.enqueue(savedSubmission.getId());
+        // Enqueue for processing ONLY AFTER the transaction commits
+        final UUID submissionId = savedSubmission.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                queueService.enqueue(submissionId);
+                log.info("Submission enqueued after commit: {}", submissionId);
+            }
+        });
 
         log.info("Submission created and queued: {}", savedSubmission.getId());
 
@@ -64,12 +76,31 @@ public class SubmissionService {
                 "Submission queued for execution");
     }
 
-    private UUID extractUserIdFromRequest(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return jwtUtil.extractUserId(token);
-        }
-        throw new IllegalArgumentException("Invalid authorization header");
+    /**
+     * Get submission details by ID
+     */
+    @Transactional(readOnly = true)
+    public SubmissionResponse getSubmission(UUID submissionId) {
+        Submission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
+
+        SubmissionResponse.SubmissionResponseBuilder builder = SubmissionResponse.builder()
+                .id(submission.getId())
+                .problemId(submission.getProblemId())
+                .languageId(submission.getLanguageId())
+                .status(submission.getStatus())
+                .createdAt(submission.getCreatedAt());
+
+        // Add result details if available
+        submissionResultRepository.findById(submissionId).ifPresent(result -> {
+            builder.executionTimeMs(result.getExecutionTimeMs())
+                    .memoryUsedMb(result.getMemoryUsedMb())
+                    .passedTestCases(result.getPassedTestCases())
+                    .totalTestCases(result.getTotalTestCases())
+                    .stdout(result.getStdout())
+                    .stderr(result.getStderr());
+        });
+
+        return builder.build();
     }
 }

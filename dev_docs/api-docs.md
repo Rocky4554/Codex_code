@@ -2,6 +2,37 @@
 
 This document describes all available endpoints in the Codex Platform application, including request/response examples, headers, and payloads for use in Postman or similar tools.
 
+## Base URL
+
+- Local: `http://localhost:8080`
+
+## Authentication
+
+Protected endpoints require:
+- `Authorization: Bearer <token>`
+
+## Common Error Responses
+
+These are returned by the global exception handler:
+
+### 400 Bad Request (validation / illegal argument)
+
+```json
+{ "error": "message" }
+```
+
+Or for validation errors:
+
+```json
+{
+  "fieldName": "validation message"
+}
+```
+
+### 401 Unauthorized
+
+If you call a protected endpoint without a valid JWT, Spring Security returns `401`.
+
 ---
 
 ## 1. Authentication
@@ -117,6 +148,8 @@ This document describes all available endpoints in the Codex Platform applicatio
   ...
 }
 ```
+
+> If the problem does not exist, the API returns `404 Not Found`.
 
 ---
 
