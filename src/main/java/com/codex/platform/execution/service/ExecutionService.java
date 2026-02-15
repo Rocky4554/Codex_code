@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -48,7 +49,7 @@ public class ExecutionService {
 
         try {
             // Load submission
-            Submission submission = submissionRepository.findById(submissionId)
+            Submission submission = submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
                     .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
 
             // Send RUNNING event
@@ -57,10 +58,10 @@ public class ExecutionService {
             submissionRepository.save(submission);
 
             // Load problem, language, and test cases
-            Problem problem = problemRepository.findById(submission.getProblemId())
+            Problem problem = problemRepository.findById(Objects.requireNonNull(submission.getProblemId(), "Problem ID is required"))
                     .orElseThrow(() -> new IllegalArgumentException("Problem not found"));
 
-            Language language = languageRepository.findById(submission.getLanguageId())
+            Language language = languageRepository.findById(Objects.requireNonNull(submission.getLanguageId(), "Language ID is required"))
                     .orElseThrow(() -> new IllegalArgumentException("Language not found"));
 
             List<TestCase> testCases = testCaseRepository.findByProblemId(problem.getId());
@@ -114,17 +115,24 @@ public class ExecutionService {
                             containerId,
                             language.getExecuteCommand(),
                             testCase.getInput(),
-                            problem.getTimeLimitMs());
+                            problem.getTimeLimitMs(),
+                            tempDir);
 
                     totalExecutionTime += result.getExecutionTimeMs();
                     stdoutBuilder.append(result.getStdout()).append("\n");
                     stderrBuilder.append(result.getStderr()).append("\n");
 
-                    // Check for runtime error
+                    // Check for runtime error (exit 137 usually means OOM kill in container)
                     if (result.getExitCode() != 0) {
-                        log.warn("  -> Test {}/{} RUNTIME_ERROR (exit code {}, {}ms)",
-                                testIndex, testCases.size(), result.getExitCode(), result.getExecutionTimeMs());
-                        finalStatus = SubmissionStatus.RUNTIME_ERROR;
+                        if (result.getExitCode() == 137) {
+                            log.warn("  -> Test {}/{} MEMORY_LIMIT_EXCEEDED (exit code {}, {}ms)",
+                                    testIndex, testCases.size(), result.getExitCode(), result.getExecutionTimeMs());
+                            finalStatus = SubmissionStatus.MEMORY_LIMIT_EXCEEDED;
+                        } else {
+                            log.warn("  -> Test {}/{} RUNTIME_ERROR (exit code {}, {}ms)",
+                                    testIndex, testCases.size(), result.getExitCode(), result.getExecutionTimeMs());
+                            finalStatus = SubmissionStatus.RUNTIME_ERROR;
+                        }
                         break;
                     }
 
@@ -174,7 +182,7 @@ public class ExecutionService {
         } catch (Exception e) {
             log.error("Error executing submission: {}", submissionId, e);
 
-            submissionRepository.findById(submissionId).ifPresent(submission -> {
+            submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required")).ifPresent(submission -> {
                 submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
                 submissionRepository.save(submission);
                 sseService.sendEvent(submissionId, SubmissionStatus.RUNTIME_ERROR);

@@ -338,3 +338,130 @@ Refactored into a single-container-per-submission pattern:
 
 **Impact:** ~5-10x speedup for submissions with multiple test cases.
 
+---
+
+## 18. Redis Connection Drops Causing Worker Error Loop
+
+**Date:** 2026-02-14  
+**Status:** Solved / Mitigated
+
+**Symptom:**
+- Worker threads spam errors every few seconds:
+  - `org.redisson.client.WriteRedisConnectionException: Unable to write command into connection ...`
+  - Often while doing `BLPOP` (queue dequeue) or `HEXISTS` (lock checks)
+- Underlying cause shows up as:
+  - `io.netty.channel.StacklessClosedChannelException`**Root Cause:**
+Redis became unavailable (most commonly: Docker `codex-redis` container stopped). The worker loop in `SubmissionWorker` retried immediately with no backoff, creating a tight error loop and flooding logs.
+
+**Solution:**
+1. **Operational fix (bring Redis back):**
+   - Run:
+     - `docker compose up -d`
+   - Verify:
+     - `docker ps` shows `codex-redis` running on `6379`
+2. **Code mitigation (prevent tight retry loop):**
+   - Added backoff in `SubmissionWorker` after Redis/infrastructure errors:
+     - waits 5s, then 10s, ... up to 30s max
+   - This prevents log spam while Redis is down and lets the app recover once Redis is back.
+
+---
+
+## 19. Missing Authorization on Submission Read + SSE Stream
+
+**Date:** 2026-02-15  
+**Status:** Solved
+
+**Problem:**
+- Any authenticated user could fetch another user's submission by ID (`GET /api/submissions/{id}`).
+- Any authenticated user could subscribe to another user's submission events (`GET /api/submissions/{id}/events`).
+
+**Root Cause:**
+Ownership checks were missing in read/stream paths.
+
+**Solution:**
+1. Added ownership validation for submission reads in `SubmissionService`.
+2. Added ownership validation for SSE stream in `SseController` before emitter registration.
+3. Added explicit `403 Forbidden` handling for `AccessDeniedException` in `GlobalExceptionHandler`.
+
+---
+
+## 20. Queue Reliability: Submission Loss on Lock Miss
+
+**Date:** 2026-02-15  
+**Status:** Solved
+
+**Problem:**
+When a worker dequeued a submission but failed to acquire the lock, it logged and skipped processing. That could silently drop submissions.
+
+**Root Cause:**
+No requeue behavior in the lock-miss branch.
+
+**Solution:**
+Updated `SubmissionWorker` to re-enqueue the submission when lock acquisition fails, preventing silent loss.
+
+---
+
+## 21. Docker Input Injection Risk + Runtime Hardening
+
+**Date:** 2026-02-15  
+**Status:** Solved / Mitigated
+
+**Problem:**
+Input was written via shell command construction, which can be unsafe if shell escaping is incomplete.
+
+**Root Cause:**
+`DockerExecutor.runTestCase()` used shell-based input file creation inside the container.
+
+**Solution:**
+1. Reworked test input handling:
+   - Write input to host temp workspace (`input.txt`) using Java I/O.
+   - Reuse mounted `/workspace/input.txt` in container execution.
+   - Removed shell-argument based input writing path.
+2. Added container hardening in `DockerExecutor`:
+   - `readonlyRootfs=true`
+   - `no-new-privileges` security option
+
+---
+
+## 22. Submission Verdict Accuracy for Memory Kills
+
+**Date:** 2026-02-15  
+**Status:** Solved
+
+**Problem:**
+Out-of-memory container kills were categorized as generic runtime errors.
+
+**Root Cause:**
+No dedicated memory-limit verdict in status enum and execution flow.
+
+**Solution:**
+1. Added `MEMORY_LIMIT_EXCEEDED` to `SubmissionStatus`.
+2. Updated execution classification:
+   - Exit code `137` now maps to `MEMORY_LIMIT_EXCEEDED`.
+3. Updated SSE terminal-status handling to include this new verdict.
+
+---
+
+## 23. Configuration and Build Hygiene Hardening
+
+**Date:** 2026-02-15  
+**Status:** Solved
+
+**Problem:**
+- Duplicate PostgreSQL dependency in `pom.xml`.
+- Weak/hardcoded local configuration values in `application-dev.properties`.
+- Missing `application-prod.properties` baseline.
+- `docker-compose.yml` had Redis only (no PostgreSQL service).
+
+**Solution:**
+1. Removed duplicate PostgreSQL dependency from `pom.xml`.
+2. Updated `application-dev.properties`:
+   - Removed hardcoded DB password (`DB_PASSWORD` env default now used).
+   - Standardized Docker host via `EXECUTION_DOCKER_HOST`.
+   - Added configurable CORS origins.
+3. Added production-safe baseline in `application-prod.properties`:
+   - `ddl-auto=validate`
+   - SQL logging disabled
+   - safer logging defaults
+4. Restored PostgreSQL service in `docker-compose.yml` (port mapping `5433:5432`) with healthcheck.
+5. Expanded `.env.example` with `SHOW_SQL`, `PORT`, `EXECUTION_WORKER_COUNT`, and CORS origin config.

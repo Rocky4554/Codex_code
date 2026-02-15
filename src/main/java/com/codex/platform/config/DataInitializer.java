@@ -31,8 +31,8 @@ public class DataInitializer implements CommandLineRunner {
             initializeSampleProblems();
         } else {
             synchronizeTimeLimits();
-        }
-    }
+        }    
+    } 
 
     private void synchronizeTimeLimits() {
         log.info("Synchronizing time limits to 5s...");

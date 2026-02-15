@@ -15,6 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class SubmissionResponse {
     private UUID id;
+    private UUID userId;
     private UUID problemId;
     private UUID languageId;
     private SubmissionStatus status;

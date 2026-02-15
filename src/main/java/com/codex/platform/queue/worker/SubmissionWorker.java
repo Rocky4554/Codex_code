@@ -57,6 +57,8 @@ public class SubmissionWorker {
                         } else {
                             log.warn("Worker-{} could not acquire lock for submission: {}, skipping", workerId,
                                     submissionId);
+                            queueService.enqueue(submissionId);
+                            log.info("Worker-{} re-enqueued submission after lock miss: {}", workerId, submissionId);
                         }
 
                     } catch (InterruptedException e) {
@@ -68,8 +70,8 @@ public class SubmissionWorker {
 
                         // Backoff on Redis / infrastructure errors to avoid tight error loops
                         try {
-                            long backoffMs = Math.min(5_000L * consecutiveErrors, 30_000L);
                             consecutiveErrors++;
+                            long backoffMs = Math.min(5_000L * consecutiveErrors, 30_000L);
                             log.warn("Worker-{} backing off for {}ms after {} consecutive error(s)",
                                     workerId, backoffMs, consecutiveErrors);
                             Thread.sleep(backoffMs);

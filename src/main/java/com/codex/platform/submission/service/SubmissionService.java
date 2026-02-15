@@ -9,7 +9,6 @@ import com.codex.platform.submission.dto.SubmitCodeRequest;
 import com.codex.platform.submission.dto.SubmitCodeResponse;
 import com.codex.platform.submission.dto.SubmissionResponse;
 import com.codex.platform.submission.entity.Submission;
-import com.codex.platform.submission.entity.SubmissionResult;
 import com.codex.platform.submission.repository.SubmissionRepository;
 import com.codex.platform.submission.repository.SubmissionResultRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -37,22 +37,24 @@ public class SubmissionService {
     public SubmitCodeResponse submitCode(SubmitCodeRequest request, HttpServletRequest httpRequest) {
         // Extract userId from SecurityContext (set by JwtAuthenticationFilter)
         UUID userId = JwtAuthenticationFilter.getCurrentUserId();
+        UUID problemId = Objects.requireNonNull(request.getProblemId(), "Problem ID is required");
+        UUID languageId = Objects.requireNonNull(request.getLanguageId(), "Language ID is required");
 
         // Validate problem exists
-        if (!problemRepository.existsById(request.getProblemId())) {
+        if (!problemRepository.existsById(problemId)) {
             throw new IllegalArgumentException("Problem not found");
         }
 
         // Validate language exists
-        if (!languageRepository.existsById(request.getLanguageId())) {
+        if (!languageRepository.existsById(languageId)) {
             throw new IllegalArgumentException("Language not found");
         }
 
         // Create submission
         Submission submission = new Submission();
         submission.setUserId(userId);
-        submission.setProblemId(request.getProblemId());
-        submission.setLanguageId(request.getLanguageId());
+        submission.setProblemId(problemId);
+        submission.setLanguageId(languageId);
         submission.setSourceCode(request.getSourceCode());
         submission.setStatus(SubmissionStatus.QUEUED);
 
@@ -63,8 +65,27 @@ public class SubmissionService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                queueService.enqueue(submissionId);
-                log.info("Submission enqueued after commit: {}", submissionId);
+                int maxRetries = 3;
+                for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        queueService.enqueue(submissionId);
+                        log.info("Submission enqueued after commit: {}", submissionId);
+                        return;
+                    } catch (Exception e) {
+                        log.error("Failed to enqueue submission {} (attempt {}/{}): {}",
+                                submissionId, attempt, maxRetries, e.getMessage());
+                        if (attempt < maxRetries) {
+                            try {
+                                Thread.sleep(1000L * attempt);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
+                        }
+                    }
+                }
+                log.error("Submission {} could not be enqueued after retries. Manual intervention may be required.",
+                        submissionId);
             }
         });
 
@@ -81,11 +102,18 @@ public class SubmissionService {
      */
     @Transactional(readOnly = true)
     public SubmissionResponse getSubmission(UUID submissionId) {
-        Submission submission = submissionRepository.findById(submissionId)
+        UUID currentUserId = JwtAuthenticationFilter.getCurrentUserId();
+        Submission submission = submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
                 .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
+
+        if (!submission.getUserId().equals(currentUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You are not authorized to view this submission");
+        }
 
         SubmissionResponse.SubmissionResponseBuilder builder = SubmissionResponse.builder()
                 .id(submission.getId())
+                .userId(submission.getUserId())
                 .problemId(submission.getProblemId())
                 .languageId(submission.getLanguageId())
                 .status(submission.getStatus())
@@ -102,5 +130,17 @@ public class SubmissionService {
         });
 
         return builder.build();
+    }
+
+    @Transactional(readOnly = true)
+    public void validateSubmissionOwnership(UUID submissionId) {
+        UUID currentUserId = JwtAuthenticationFilter.getCurrentUserId();
+        Submission submission = submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
+                .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
+
+        if (!submission.getUserId().equals(currentUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You are not authorized to access this submission");
+        }
     }
 }

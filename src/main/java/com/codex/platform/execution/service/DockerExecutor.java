@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.*;
 
 @Service
@@ -90,6 +91,8 @@ public class DockerExecutor {
                     .withMemorySwap((long) memoryLimitMb * 1024 * 1024)
                     .withCpuQuota(50000L)
                     .withPidsLimit(50L)
+                    .withReadonlyRootfs(true)
+                    .withSecurityOpts(List.of("no-new-privileges"))
                     .withAutoRemove(false);
 
             CreateContainerResponse container = dockerClient.createContainerCmd(dockerImage)
@@ -155,14 +158,11 @@ public class DockerExecutor {
      * redirect.
      */
     public ExecutionResult runTestCase(String containerId, String executeCommand,
-            String input, int timeLimitMs) throws Exception {
+            String input, int timeLimitMs, Path workDir) throws Exception {
 
-        // Write input file into the container workspace
-        if (input != null && !input.isEmpty()) {
-            // Use docker exec to write input file directly
-            String writeInputCmd = "printf '%s' '" + escapeShellArg(input) + "' > /workspace/input.txt";
-            executeCommandInContainer(containerId, writeInputCmd, 5000);
-        }
+        // Write input from host-side mounted workspace to avoid shell argument injection.
+        Path inputFile = workDir.resolve("input.txt");
+        Files.writeString(inputFile, input == null ? "" : input);
 
         // Build the execution command
         String inputRedirect = (input != null && !input.isEmpty()) ? " < /workspace/input.txt" : "";
@@ -271,10 +271,6 @@ public class DockerExecutor {
         Path baseDir = Paths.get(tempBaseDir);
         Files.createDirectories(baseDir);
         return Files.createTempDirectory(baseDir, "exec-");
-    }
-
-    private String escapeShellArg(String arg) {
-        return arg.replace("'", "'\"'\"'");
     }
 
     private void deleteDirectory(File directory) {
