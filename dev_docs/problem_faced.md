@@ -465,3 +465,34 @@ No dedicated memory-limit verdict in status enum and execution flow.
    - safer logging defaults
 4. Restored PostgreSQL service in `docker-compose.yml` (port mapping `5433:5432`) with healthcheck.
 5. Expanded `.env.example` with `SHOW_SQL`, `PORT`, `EXECUTION_WORKER_COUNT`, and CORS origin config.
+
+---
+
+## 24. Missing CRUD Endpoints for Problem and Language Management
+
+**Date:** 2026-02-15  
+**Status:** Solved
+
+**Problem:**
+The API only had read endpoints for problems/languages. There was no official create/update/delete API for:
+- Problems
+- Languages
+
+This blocked normal content management flows.
+
+**Solution:**
+1. Added full Problem CRUD:
+   - `POST /api/problems`
+   - `PUT /api/problems/{id}`
+   - `DELETE /api/problems/{id}`
+2. Added full Language CRUD:
+   - `POST /api/languages`
+   - `PUT /api/languages/{id}`
+   - `DELETE /api/languages/{id}`
+3. Added request validation DTOs:
+   - `ProblemRequest`
+   - `LanguageRequest`
+4. Added `LanguageService` and duplicate-name checks in repository.
+5. Updated security policy:
+   - Public: GET problems/languages
+   - Auth required: all write operations

@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import java.util.Arrays;
 
@@ -41,13 +42,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/problems").permitAll()
-                        .requestMatchers("/api/problems/{id}").permitAll()
-                        .requestMatchers("/api/languages").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/problems", "/api/problems/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/languages").permitAll()
 
                         // Protected endpoints
                         .requestMatchers("/api/submissions/**").authenticated()
-                        .requestMatchers("/api/problems/submit").authenticated()
                         .requestMatchers("/api/user/**").authenticated()
 
                         // All other requests require authentication

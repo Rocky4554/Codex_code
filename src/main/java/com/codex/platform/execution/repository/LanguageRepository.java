@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface LanguageRepository extends JpaRepository<Language, UUID> {
     Optional<Language> findByName(String name);
+    boolean existsByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCaseAndIdNot(String name, UUID id);
 }
