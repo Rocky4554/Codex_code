@@ -1,0 +1,52 @@
+# Production compose for EC2 deployment.
+# DB is Neon (cloud) — no local Postgres container needed.
+# Usage:
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+
+services:
+  codex-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codex-app
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.production
+    environment:
+      # Spring profile
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Neon DB (from .env.production)
+      DB_HOST: ${NEON_DB_HOST}
+      DB_PORT: ${NEON_DB_PORT:-5432}
+      DB_NAME: ${NEON_DB_NAME}
+      DB_USERNAME: ${NEON_DB_USERNAME}
+      DB_PASSWORD: ${NEON_DB_PASSWORD}
+
+      # Redis (External/Hosted)
+      REDIS_PROTOCOL: ${REDIS_PROTOCOL:-redis}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+
+      # Docker socket for code execution (unix socket inside Linux container)
+      EXECUTION_DOCKER_HOST: unix:///var/run/docker.sock
+      EXECUTION_TEMP_DIR: /tmp/codex/submissions
+      EXECUTION_WORKER_COUNT: 1
+
+      # CORS
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-*}
+
+      # Logging
+      LOG_LEVEL: INFO
+    volumes:
+      # Mount Docker socket so the app can spin up code-execution containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Shared temp dir for code execution workspace
+      - /tmp/codex:/tmp/codex

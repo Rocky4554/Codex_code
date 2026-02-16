@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Build output (we build inside Docker)
+target/
+
+# Docs
+dev_docs/
+api-docs/
+*.md
+
+# Environment files (all)
+.env*
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
