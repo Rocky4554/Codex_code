@@ -23,7 +23,7 @@ public class SubmissionWorker {
     private final ExecutionService executionService;
     private final List<Thread> workerThreads = new ArrayList<>();
 
-    @Value("${execution.worker-count:2}")
+    @Value("${execution.worker-count:1}")
     private int workerCount;
 
     /**

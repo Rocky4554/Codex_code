@@ -70,4 +70,12 @@ public class QueueService {
             log.info("Released lock");
         }
     }
+
+    /**
+     * Get the current queue depth
+     */
+    public int getQueueDepth() {
+        RBlockingQueue<UUID> queue = redissonClient.getBlockingQueue(QUEUE_NAME);
+        return queue.size();
+    }
 }

@@ -14,7 +14,13 @@ import com.codex.platform.submission.repository.SubmissionResultRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RRateLimiter;
+import org.redisson.api.RateIntervalUnit;
+import org.redisson.api.RateType;
+import org.redisson.api.RedissonClient;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -32,11 +38,25 @@ public class SubmissionService {
     private final ProblemRepository problemRepository;
     private final LanguageRepository languageRepository;
     private final QueueService queueService;
+    private final RedissonClient redissonClient;
 
     @Transactional
     public SubmitCodeResponse submitCode(SubmitCodeRequest request, HttpServletRequest httpRequest) {
         // Extract userId from SecurityContext (set by JwtAuthenticationFilter)
         UUID userId = JwtAuthenticationFilter.getCurrentUserId();
+
+        // Rate Limiting: 5 submissions per minute per user
+        String rateLimitKey = "rate_limit:submission:" + userId;
+        RRateLimiter rateLimiter = redissonClient.getRateLimiter(rateLimitKey);
+        // Initialize rate limiter if not exists: 5 permits per 1 minute
+        rateLimiter.trySetRate(RateType.OVERALL, 5, 1, RateIntervalUnit.MINUTES);
+
+        if (!rateLimiter.tryAcquire()) {
+            log.warn("Rate limit exceeded for user: {}", userId);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Submission rate limit exceeded. Please try again later.");
+        }
+
         UUID problemId = Objects.requireNonNull(request.getProblemId(), "Problem ID is required");
         UUID languageId = Objects.requireNonNull(request.getLanguageId(), "Language ID is required");
 
@@ -103,7 +123,8 @@ public class SubmissionService {
     @Transactional(readOnly = true)
     public SubmissionResponse getSubmission(UUID submissionId) {
         UUID currentUserId = JwtAuthenticationFilter.getCurrentUserId();
-        Submission submission = submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
+        Submission submission = submissionRepository
+                .findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
                 .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
 
         if (!submission.getUserId().equals(currentUserId)) {
@@ -135,7 +156,8 @@ public class SubmissionService {
     @Transactional(readOnly = true)
     public void validateSubmissionOwnership(UUID submissionId) {
         UUID currentUserId = JwtAuthenticationFilter.getCurrentUserId();
-        Submission submission = submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
+        Submission submission = submissionRepository
+                .findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
                 .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
 
         if (!submission.getUserId().equals(currentUserId)) {

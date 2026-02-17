@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,12 @@ public class ExecutionService {
     private final ResultProcessor resultProcessor;
     private final SseService sseService;
 
+    // Metrics
+    private final AtomicLong totalSubmissions = new AtomicLong(0);
+    private final AtomicLong successfulExecutions = new AtomicLong(0);
+    private final AtomicLong failedExecutions = new AtomicLong(0);
+    private final AtomicLong cumulativeExecutionTimeMs = new AtomicLong(0);
+
     /**
      * Main entry point for executing a submission.
      * Uses a SINGLE container for the entire submission — compile once, run all
@@ -43,13 +50,15 @@ public class ExecutionService {
      */
     public void executeSubmission(UUID submissionId) {
         log.info("Starting execution for submission: {}", submissionId);
+        totalSubmissions.incrementAndGet();
 
         String containerId = null;
         Path tempDir = null;
 
         try {
             // Load submission
-            Submission submission = submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
+            Submission submission = submissionRepository
+                    .findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
                     .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
 
             // Send RUNNING event
@@ -58,10 +67,12 @@ public class ExecutionService {
             submissionRepository.save(submission);
 
             // Load problem, language, and test cases
-            Problem problem = problemRepository.findById(Objects.requireNonNull(submission.getProblemId(), "Problem ID is required"))
+            Problem problem = problemRepository
+                    .findById(Objects.requireNonNull(submission.getProblemId(), "Problem ID is required"))
                     .orElseThrow(() -> new IllegalArgumentException("Problem not found"));
 
-            Language language = languageRepository.findById(Objects.requireNonNull(submission.getLanguageId(), "Language ID is required"))
+            Language language = languageRepository
+                    .findById(Objects.requireNonNull(submission.getLanguageId(), "Language ID is required"))
                     .orElseThrow(() -> new IllegalArgumentException("Language not found"));
 
             List<TestCase> testCases = testCaseRepository.findByProblemId(problem.getId());
@@ -147,10 +158,12 @@ public class ExecutionService {
                     // Compare output
                     if (OutputNormalizer.areEqual(testCase.getExpectedOutput(), result.getStdout())) {
                         passedCount++;
-                        log.info("  -> Test {}/{} PASSED ({}ms)", testIndex, testCases.size(), result.getExecutionTimeMs());
+                        log.info("  -> Test {}/{} PASSED ({}ms)", testIndex, testCases.size(),
+                                result.getExecutionTimeMs());
                     } else {
                         finalStatus = SubmissionStatus.WRONG_ANSWER;
-                        log.warn("  -> Test {}/{} WRONG_ANSWER ({}ms)", testIndex, testCases.size(), result.getExecutionTimeMs());
+                        log.warn("  -> Test {}/{} WRONG_ANSWER ({}ms)", testIndex, testCases.size(),
+                                result.getExecutionTimeMs());
                         log.debug("     Expected: [{}]", testCase.getExpectedOutput());
                         log.debug("     Got:      [{}]", result.getStdout());
                         break;
@@ -171,25 +184,48 @@ public class ExecutionService {
             resultProcessor.saveResult(submission, submissionResult, finalStatus);
             sseService.sendEvent(submissionId, finalStatus);
 
+            successfulExecutions.incrementAndGet();
+            cumulativeExecutionTimeMs.addAndGet(totalExecutionTime);
+
             log.info("╔══════════════════════════════════════════════════");
             log.info("║ Submission  : {}", submissionId);
             log.info("║ Verdict     : {}", finalStatus);
             log.info("║ Test Cases  : {}/{} passed", passedCount, testCases.size());
             log.info("║ Time        : {}ms (limit: {}ms)", totalExecutionTime, problem.getTimeLimitMs());
-            log.info("║ Memory      : {}MB (limit: {}MB)", submissionResult.getMemoryUsedMb(), problem.getMemoryLimitMb());
+            log.info("║ Memory      : {}MB (limit: {}MB)", submissionResult.getMemoryUsedMb(),
+                    problem.getMemoryLimitMb());
             log.info("╚══════════════════════════════════════════════════");
 
         } catch (Exception e) {
             log.error("Error executing submission: {}", submissionId, e);
 
-            submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required")).ifPresent(submission -> {
-                submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
-                submissionRepository.save(submission);
-                sseService.sendEvent(submissionId, SubmissionStatus.RUNTIME_ERROR);
-            });
+            submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
+                    .ifPresent(submission -> {
+                        submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
+                        submissionRepository.save(submission);
+                        sseService.sendEvent(submissionId, SubmissionStatus.RUNTIME_ERROR);
+                    });
+            failedExecutions.incrementAndGet();
         } finally {
             // 5. Cleanup — always runs, even on error
             dockerExecutor.cleanup(containerId, tempDir);
         }
+    }
+
+    // Metric Getters
+    public long getTotalSubmissions() {
+        return totalSubmissions.get();
+    }
+
+    public long getSuccessfulExecutions() {
+        return successfulExecutions.get();
+    }
+
+    public long getFailedExecutions() {
+        return failedExecutions.get();
+    }
+
+    public long getCumulativeExecutionTimeMs() {
+        return cumulativeExecutionTimeMs.get();
     }
 }
