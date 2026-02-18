@@ -41,3 +41,11 @@ This document tracks Problem and Language management APIs.
   "executeCommand": "python solution.py"
 }
 ```
+
+## Troubleshooting
+
+### Redis Cloud Connection
+If the application fails to connect to Redis Cloud, check:
+- **Address:** Port 11661 usually does NOT support SSL/TLS by default in free Redis Cloud tiers. Use `redis://` instead of `rediss://`.
+- **Authentication:** Ensure `redisson.single-server-config.username` is set to `default` and the password is correct (check for case-sensitivity).
+- **Configuration:** Use `RedissonConfig.java` to ensure custom properties are loaded over Spring auto-configuration.

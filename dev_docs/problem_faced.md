@@ -496,3 +496,43 @@ This blocked normal content management flows.
 5. Updated security policy:
    - Public: GET problems/languages
    - Auth required: all write operations
+
+---
+
+## 25. Redis Cloud Connection Issues (Local Development)
+
+**Date:** 2026-02-18
+**Status:** Solved
+
+**Errors Encountered:**
+1. `org.redisson.client.RedisConnectionException: Unable to connect to Redis server: localhost/127.0.0.1:6379`
+2. `io.netty.handler.codec.DecoderException: io.netty.handler.ssl.NotSslRecordException: not an SSL/TLS record`
+3. `Caused by: org.redisson.client.RedisException: WRONGPASS invalid username-password pair`
+
+**Root Causes:**
+1. **Redisson Defaults:** Redisson was defaulting to `localhost:6379` because Spring's auto-config wasn't correctly picking up the Cloud address.
+2. **SSL/TLS Mismatch:** The connection URL used `rediss://` (SSL) but the Redis Cloud instance port (11661) was non-TLS.
+3. **Credential Typo:** A typo in the Redis Cloud password and username configuration.
+4. **Auto-config Conflict:** Attempting to exclude `RedissonAutoConfiguration` caused an error since it's not a standard auto-config class that can be excluded via `@SpringBootApplication`.
+
+**Solution:**
+1. **Custom Configuration:** Created `RedissonConfig.java` with a `@Primary` bean to manually configure the `RedissonClient` using values from `application-dev.properties`.
+2. **Protocol Fix:** Changed URL from `rediss://` to `redis://`.
+3. **Corrected Credentials:** Updated the password to match the Redis Cloud dashboard (capital 'W').
+4. **Startup Fix:** Removed the invalid exclusion in `CodexPlatformApplication.java`.
+
+```java
+@Configuration
+public class RedissonConfig {
+    @Bean(destroyMethod = "shutdown")
+    @Primary
+    public RedissonClient redissonClient() {
+        Config config = new Config();
+        config.useSingleServer()
+              .setAddress(address)
+              .setUsername(username)
+              .setPassword(password);
+        return Redisson.create(config);
+    }
+}
+```
