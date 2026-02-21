@@ -536,3 +536,33 @@ public class RedissonConfig {
     }
 }
 ```
+
+---
+
+## 26. Docker Build: Maven Base Image Not Found (EC2 Deployment)
+
+**Date:** 2026-02-21  
+**Status:** Solved
+
+**Error:**
+```
+failed to solve: maven:3.9-eclipse-temurin-17-jammy: failed to resolve source metadata for 
+docker.io/library/maven:3.9-eclipse-temurin-17-jammy: not found
+```
+
+**Root Cause:**
+The Dockerfile referenced `maven:3.9-eclipse-temurin-17-jammy` as the builder stage base image. This tag does not exist on Docker Hub — the official Maven image maintains tags like `maven:3.9-eclipse-temurin-17` or `maven:3.9-eclipse-temurin-17-noble`, but not the `-jammy` variant.
+
+**Solution:**
+Updated the Dockerfile builder stage to use the available tag:
+
+```dockerfile
+# Before (invalid)
+FROM maven:3.9-eclipse-temurin-17-jammy AS builder
+
+# After (valid)
+FROM maven:3.9-eclipse-temurin-17 AS builder
+```
+
+**Additional Notes:**
+When running `docker compose -f docker-compose.prod.yml up -d`, you may see warnings about unset environment variables (`REDIS_PASSWORD`, `NEON_DB_*`, `JWT_SECRET`, etc.). Create a `.env.production` or `.env.production.local` file with all required values before building. See `deploy.md` for the full list.

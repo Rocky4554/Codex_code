@@ -9,13 +9,13 @@
                    +-----------------------------------------+
                    |  Docker Engine                          |
                    |                                         |
-                   |  +-------------+   +----------------+   |
-                   |  | codex-app   |   | codex-redis    |   |
-                   |  | (Spring     |-->| (Redis 7       |   |
-                   |  |  Boot +     |   |  Alpine)       |   |
-                   |  |  Workers)   |   |  ~50MB RAM     |   |
-                   |  | ~384MB RAM  |   +----------------+   |
-                   |  +------+------+                        |
+                   |  +-------------+                        |
+                   |  | codex-app   |                        |
+                   |  | (Spring     |---> Redis Cloud        |
+                   |  |  Boot +     |     (External)         |
+                   |  |  Workers)   |                        |
+                   |  | ~384MB RAM  |---> Neon PostgreSQL    |
+                   |  +------+------+     (Cloud)            |
                    |         |                               |
                    |         | Docker Socket                 |
                    |         v                               |
@@ -25,15 +25,12 @@
                    |  | node:20     |   containers)          |
                    |  +-------------+                        |
                    +-----------------------------------------+
-                              |
-                         Neon PostgreSQL
-                         (Cloud, ap-southeast-1)
 ```
 
 **Key points:**
 - Single JAR — the app serves the API AND runs worker threads (no separate worker process)
 - DB is Neon cloud PostgreSQL (no local Postgres container needed)
-- Redis runs as a lightweight container for queue + locking
+- Redis is Redis Cloud (external) — no local Redis container in prod
 - Code execution spins up temporary Docker containers via the mounted Docker socket
 - Worker concurrency = 1 (safe for 1-2 GB RAM instances)
 
@@ -44,8 +41,9 @@
 | What | Why |
 |------|-----|
 | AWS EC2 instance | t2.small (2GB) recommended; t2.micro (1GB) is tight |
-| Docker + Docker Compose installed | Runs the app + Redis + code-exec containers |
+| Docker + Docker Compose installed | Runs the app + code-exec containers |
 | Neon PostgreSQL account | Free tier: 0.5GB storage, connection pooling |
+| Redis Cloud account | Free tier for queue + locking (or self-hosted Redis) |
 | Security Group | Inbound: 22 (SSH), 80/443 (HTTP/S), 8080 (app) |
 | Domain (optional) | For HTTPS via Nginx reverse proxy or ALB |
 
@@ -113,14 +111,24 @@ nano .env.production.local
 
 Fill in your real values:
 ```env
+# Neon PostgreSQL
 NEON_DB_HOST=ep-xxxxx-pooler.ap-southeast-1.aws.neon.tech
 NEON_DB_PORT=5432
 NEON_DB_NAME=codex-db
 NEON_DB_USERNAME=neondb_owner
 NEON_DB_PASSWORD=your_actual_password
 
-JWT_SECRET=your-strong-random-secret-at-least-32-bytes-long
+# Redis Cloud (or external Redis)
+REDIS_PROTOCOL=redis
+REDIS_HOST=your-redis-host.redislabs.com
+REDIS_PORT=12345
+REDIS_PASSWORD=your_redis_password
 
+# JWT
+JWT_SECRET=your-strong-random-secret-at-least-32-bytes-long
+JWT_EXPIRATION=86400000
+
+# CORS (optional)
 APP_CORS_ALLOWED_ORIGINS=https://your-frontend.com
 ```
 
@@ -153,8 +161,7 @@ docker ps
 ```
 
 You should see:
-- `codex-app` — running on port 8080
-- `codex-redis` — running on port 6379
+- `codex-app` — running on port 8080 (Redis and DB are external)
 
 ---
 
@@ -164,7 +171,6 @@ You should see:
 |-----------|-----|
 | OS + Docker Engine | ~300MB |
 | codex-app (JVM -Xmx384m) | ~400MB |
-| codex-redis (50MB limit) | ~50MB |
 | 1 code-exec container (256MB limit) | ~256MB |
 | **Headroom** | **~500MB** |
 
@@ -246,10 +252,12 @@ sudo certbot --nginx -d your-domain.com
 
 | Symptom | Fix |
 |---------|-----|
+| `maven:3.9-eclipse-temurin-17-jammy: not found` | The Dockerfile uses `maven:3.9-eclipse-temurin-17` (without `-jammy`). Ensure you have the latest code. See `problem_faced.md` #26. |
+| `VARIABLE_NAME variable is not set` | Create `.env.production` or `.env.production.local` with all required vars (NEON_*, REDIS_*, JWT_SECRET). Use `--env-file .env.production.local` in the compose command. |
 | `Connection refused` to Neon DB | Check `NEON_DB_HOST`, `NEON_DB_PASSWORD` in `.env.production.local`. Verify Neon dashboard shows DB is active. |
 | Code execution hangs | Run `docker ps` — check if compiler containers are stuck. Restart Docker: `sudo systemctl restart docker` |
 | Out of memory | Upgrade to t2.small (2GB). Or reduce `-Xmx` and `execution.default-memory-limit-mb`. |
-| Redis connection errors | `docker compose -f docker-compose.prod.yml restart redis` |
+| Redis connection errors | Verify `REDIS_HOST`, `REDIS_PASSWORD` in `.env.production.local`. Test Redis connectivity from EC2. |
 | First submission slow | Pre-pull compiler images (step 3). First container creation is always slower. |
 | `permission denied` on Docker socket | Run `sudo chmod 666 /var/run/docker.sock` or add user to docker group. |
 
