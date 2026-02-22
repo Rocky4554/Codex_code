@@ -29,9 +29,11 @@ public class RedissonConfig {
     @Bean(destroyMethod = "shutdown")
     @Primary
     public RedissonClient redissonClient() {
+        // Trim and strip CRLF (common when .env is edited on Windows)
+        String trimmedAddress = address != null ? address.trim().replaceAll("\\r|\\n", "") : "";
         Config config = new Config();
         config.useSingleServer()
-                .setAddress(address)
+                .setAddress(trimmedAddress)
                 .setUsername(username)
                 .setPassword(password)
                 .setConnectionPoolSize(connectionPoolSize)

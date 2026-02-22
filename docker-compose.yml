@@ -25,10 +25,8 @@ services:
       DB_USERNAME: ${NEON_DB_USERNAME}
       DB_PASSWORD: ${NEON_DB_PASSWORD}
 
-      # Redis (External/Hosted)
-      REDIS_PROTOCOL: ${REDIS_PROTOCOL:-redis}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT:-6379}
+      # Redis (External/Hosted) — REDIS_URL built from parts for reliable parsing
+      REDIS_URL: ${REDIS_PROTOCOL:-redis}://${REDIS_HOST}:${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # JWT

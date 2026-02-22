@@ -34,6 +34,7 @@ E:\Personal Projects\Codex\src\main\java\com\codex\platform\submission\dto\Submi
 E:\Personal Projects\Codex\src\main\java\com\codex\platform\problem\controller\ProblemController.java
 E:\Personal Projects\Codex\src\main\java\com\codex\platform\execution\entity\Language.java
 E:\Personal Projects\Codex\src\main\java\com\codex\platform\submission\repository\SubmissionRepository.java
+E:\Personal Projects\Codex\src\main\java\com\codex\platform\monitoring\controller\HealthController.java
 E:\Personal Projects\Codex\src\main\java\com\codex\platform\execution\dto\LanguageRequest.java
 E:\Personal Projects\Codex\src\main\java\com\codex\platform\submission\entity\Submission.java
 E:\Personal Projects\Codex\src\main\java\com\codex\platform\monitoring\controller\MonitoringController.java
