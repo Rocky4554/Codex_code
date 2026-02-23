@@ -39,6 +39,13 @@ public class RedissonConfig {
                 .setConnectionPoolSize(connectionPoolSize)
                 .setConnectionMinimumIdleSize(connectionMinimumIdleSize);
 
+        // Tell Redisson to use the default Java DNS resolver instead of Netty's
+        // built-in resolver
+        // This fixes "DnsNameResolverTimeoutException: query via UDP timed out"
+        config.setAddressResolverGroupFactory(
+                (channelType, channelFactory,
+                        nameServerProvider) -> io.netty.resolver.DefaultAddressResolverGroup.INSTANCE);
+
         return Redisson.create(config);
     }
 }
