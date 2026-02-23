@@ -62,6 +62,21 @@ To start the monitoring stack:
 docker compose -f docker-compose.monitoring.yml up -d
 ```
 
+### Loki and Promtail Setup (Docker)
+
+To monitor application logs, Loki and Promtail are configured alongside Prometheus and Grafana.
+
+**How it works:**
+1. **Spring Boot (Local):** Logback is configured via `logback-spring.xml` to write application logs to `logs/codex-platform.log`.
+2. **Promtail (Docker):** Runs as a container and mounts the `logs/` directory. It reads `codex-platform.log` and pushes the logs to Loki. It is configured via `promtail-config.yml`.
+3. **Loki (Docker):** Runs on port `3100`. It receives logs from Promtail and indexes them.
+4. **Grafana (Docker):** Connects to Loki as a data source (URL: `http://loki:3100`). Logs can be queried in the "Explore" tab using LogQL (e.g., `{job="codex-platform"}`).
+
+```bash
+# Starts the entire monitoring stack including Loki & Promtail
+docker compose -f docker-compose.monitoring.yml up -d
+```
+
 ---
 
 ## 3. Problems Faced and Solutions
