@@ -30,7 +30,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # JWT
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
 
       # Docker socket for code execution (unix socket inside Linux container)
@@ -48,3 +48,30 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Shared temp dir for code execution workspace
       - /tmp/codex:/tmp/codex
+      # Shared log volume for Promtail
+      - codex-logs:/app/logs
+    networks:
+      - default
+      - monitoring
+
+  # ── Promtail Sidecar (ships with this app) ──
+  codex-promtail:
+    image: grafana/promtail:2.9.4
+    container_name: codex-promtail
+    restart: always
+    volumes:
+      - codex-logs:/var/log/app:ro              # Read app logs
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - codex-app
+    networks:
+      - monitoring
+
+volumes:
+  codex-logs:
+
+networks:
+  monitoring:
+    external: true
+    name: monitoring
