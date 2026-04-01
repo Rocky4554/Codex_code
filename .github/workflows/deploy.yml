@@ -58,14 +58,14 @@ jobs:
             # Login to GHCR
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
-            # Pull latest image
-            docker pull ghcr.io/${{ github.repository }}:latest
+            # Pull latest image (lowercase repo name required by Docker)
+            docker pull ghcr.io/rocky4554/codex_code:latest
 
             # Go to project directory and restart
             cd ~/Codex_code
 
             # Pull and restart using prod compose (GHCR image, not local build)
-            docker compose -f docker-compose.prod.yml --env-file .env.production up -d --pull always
+            docker compose -f docker-compose.yml --env-file .env.production up -d --pull always
 
             # Clean up old images
             docker image prune -f
