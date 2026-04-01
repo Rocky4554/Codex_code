@@ -1,0 +1,58 @@
+# Production compose for EC2 deployment (pulls pre-built image from GHCR).
+# Place this file on your EC2 at ~/codex/docker-compose.yml
+# Usage:
+#   docker compose --env-file .env.production up -d --pull always
+
+services:
+  codex-app:
+    image: ghcr.io/rocky4554/codex_code:latest
+    container_name: codex-app
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.production
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: ${NEON_DB_HOST}
+      DB_PORT: ${NEON_DB_PORT:-5432}
+      DB_NAME: ${NEON_DB_NAME}
+      DB_USERNAME: ${NEON_DB_USERNAME}
+      DB_PASSWORD: ${NEON_DB_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      EXECUTION_DOCKER_HOST: unix:///var/run/docker.sock
+      EXECUTION_TEMP_DIR: /tmp/codex/submissions
+      EXECUTION_WORKER_COUNT: 1
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-*}
+      LOG_LEVEL: INFO
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/codex:/tmp/codex
+      - codex-logs:/app/logs
+    networks:
+      - default
+      - monitoring
+
+  codex-promtail:
+    image: grafana/promtail:2.9.4
+    container_name: codex-promtail
+    restart: always
+    volumes:
+      - codex-logs:/var/log/app:ro
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - codex-app
+    networks:
+      - monitoring
+
+volumes:
+  codex-logs:
+
+networks:
+  monitoring:
+    external: true
+    name: monitoring
