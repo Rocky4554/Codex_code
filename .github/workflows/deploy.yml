@@ -62,10 +62,10 @@ jobs:
             docker pull ghcr.io/${{ github.repository }}:latest
 
             # Go to project directory and restart
-            cd ~/codex
+            cd ~/Codex_code
 
-            # Update the compose file to use the GHCR image instead of local build
-            docker compose -f docker-compose.yml --env-file .env.production up -d --pull always
+            # Pull and restart using prod compose (GHCR image, not local build)
+            docker compose -f docker-compose.prod.yml --env-file .env.production up -d --pull always
 
             # Clean up old images
             docker image prune -f
