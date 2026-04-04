@@ -21,7 +21,7 @@ services:
       DB_PASSWORD: ${NEON_DB_PASSWORD}
       REDIS_URL: ${REDIS_URL}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET:}
+      JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
       EXECUTION_DOCKER_HOST: unix:///var/run/docker.sock
       EXECUTION_TEMP_DIR: /tmp/codex/submissions
