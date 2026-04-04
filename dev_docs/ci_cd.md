@@ -35,9 +35,9 @@ GitHub Actions triggers (.github/workflows/deploy.yml)
 |------|----------|---------|
 | `deploy.yml` | `.github/workflows/deploy.yml` | GitHub Actions workflow definition |
 | `docker-compose.prod.yml` | Project root | Production compose file (uses GHCR image instead of local build) |
-| `docker-compose.yml` | EC2: `~/codex/docker-compose.yml` | Copy of `docker-compose.prod.yml` placed on EC2 |
-| `.env.production` | EC2: `~/codex/.env.production` | Environment variables for production |
-| `promtail-config.yml` | EC2: `~/codex/promtail-config.yml` | Promtail log shipping config |
+| `docker-compose.yml` | EC2: `~/Codex_code/docker-compose.yml` | Must use GHCR image (not local build) — overwrite with `docker-compose.prod.yml` content |
+| `.env.production` | EC2: `~/Codex_code/.env.production` | Environment variables for production |
+| `promtail-config.yml` | EC2: `~/Codex_code/promtail-config.yml` | Promtail log shipping config |
 
 ---
 
@@ -116,44 +116,38 @@ ssh -i your-key.pem ubuntu@YOUR_EC2_IP
 docker ps
 ```
 
-#### 4b. Create project directory
+#### 4b. Clone the repo on EC2 (if not already done)
+
+The deploy script runs `cd ~/Codex_code`, so your project must be cloned there:
 
 ```bash
-mkdir -p ~/codex
+git clone https://github.com/Rocky4554/Codex_code.git ~/Codex_code
 ```
 
-#### 4c. Copy files to EC2
+If already cloned, verify the path:
+```bash
+ls ~/Codex_code/docker-compose.yml
+```
 
-From your **local machine**, run:
+#### 4c. Update docker-compose.yml on EC2 to use GHCR image
+
+The default `docker-compose.yml` builds from source. Replace it with the prod version that pulls from GHCR:
 
 ```bash
-# Copy the production compose file (rename it to docker-compose.yml on EC2)
-scp -i your-key.pem docker-compose.prod.yml ubuntu@YOUR_EC2_IP:~/codex/docker-compose.yml
-
-# Copy promtail config
-scp -i your-key.pem promtail-config.yml ubuntu@YOUR_EC2_IP:~/codex/promtail-config.yml
-
-# Copy environment file
-scp -i your-key.pem .env.production ubuntu@YOUR_EC2_IP:~/codex/.env.production
+# On EC2 — overwrite with the prod compose content (pulls from GHCR)
+cp ~/Codex_code/docker-compose.prod.yml ~/Codex_code/docker-compose.yml
 ```
 
-**On Windows (PowerShell), use full paths:**
+Or copy from your local machine:
 ```powershell
-scp -i C:\path\to\your-key.pem "E:\Personal Projects\Codex_backend\docker-compose.prod.yml" ubuntu@YOUR_EC2_IP:~/codex/docker-compose.yml
-scp -i C:\path\to\your-key.pem "E:\Personal Projects\Codex_backend\promtail-config.yml" ubuntu@YOUR_EC2_IP:~/codex/promtail-config.yml
-scp -i C:\path\to\your-key.pem "E:\Personal Projects\Codex_backend\.env.production" ubuntu@YOUR_EC2_IP:~/codex/.env.production
+# Windows PowerShell
+scp -i "C:\path\to\your-key.pem" "E:\Personal Projects\Codex_backend\docker-compose.prod.yml" ubuntu@YOUR_EC2_IP:~/Codex_code/docker-compose.yml
 ```
 
-#### 4d. Create Docker network for monitoring
+#### 4d. Set up .env.production on EC2
 
 ```bash
-docker network create monitoring
-```
-
-#### 4e. Verify .env.production exists and has correct values
-
-```bash
-cat ~/codex/.env.production
+cat ~/Codex_code/.env.production
 ```
 
 It should contain:
@@ -167,6 +161,12 @@ REDIS_URL=redis://your-redis-host:6379
 REDIS_PASSWORD=your-redis-password
 JWT_SECRET=your-256-bit-secret
 APP_CORS_ALLOWED_ORIGINS=https://your-frontend.com
+```
+
+#### 4e. Create Docker network for monitoring
+
+```bash
+docker network create monitoring
 ```
 
 #### 4f. Test manual pull (optional, to verify GHCR access)
@@ -245,7 +245,7 @@ docker logs codex-app --tail 100
 docker images | grep codex
 
 # Restart manually
-cd ~/codex
+cd ~/Codex_code
 docker compose --env-file .env.production up -d --pull always
 
 # Check compose logs
@@ -260,10 +260,10 @@ docker compose logs -f
 
 ```bash
 # Stop the app
-cd ~/codex && docker compose down
+cd ~/Codex_code && docker compose down
 
 # Restart with fresh pull
-cd ~/codex && docker compose --env-file .env.production up -d --pull always
+cd ~/Codex_code && docker compose --env-file .env.production up -d --pull always
 
 # View real-time logs
 docker logs -f codex-app

@@ -113,6 +113,51 @@ docker exec -it <container_name_or_id> /bin/bash
 
 ---
 
+## 🚀 EC2 Production (CI/CD)
+
+The app runs on EC2 at `~/Codex_code/`. The CI/CD pipeline auto-deploys on every push to `main`.
+
+**SSH into EC2**
+```bash
+ssh -i your-key.pem ubuntu@YOUR_EC2_IP
+```
+
+**Check running containers**
+```bash
+docker ps
+```
+
+**View app logs**
+```bash
+docker logs codex-app --tail 100
+docker logs -f codex-app   # follow live
+```
+
+**Restart app manually (force fresh pull from GHCR)**
+```bash
+cd ~/Codex_code
+docker compose --env-file .env.production up -d --pull always
+```
+
+**Stop the app**
+```bash
+cd ~/Codex_code && docker compose down
+```
+
+**Trigger a rebuild without code changes**
+```bash
+git commit --allow-empty -m "trigger rebuild"
+git push origin main
+```
+
+**Check disk usage (images pile up over time)**
+```bash
+docker system df
+docker image prune -f   # remove dangling images only
+```
+
+---
+
 ## 🧹 Cleanup Operations
 
 **Remove all stopped containers, unused networks, and dangling images (Safe)**
