@@ -1,7 +1,7 @@
 # Production compose for EC2 deployment (pulls pre-built image from GHCR).
-# Place this file on your EC2 at ~/codex/docker-compose.yml
+# Place this file on your EC2 at ~/Codex_code/docker-compose.prod.yml
 # Usage:
-#   docker compose --env-file .env.production up -d --pull always
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --pull always
 
 services:
   codex-app:
