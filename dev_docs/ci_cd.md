@@ -22,8 +22,8 @@ GitHub Actions triggers (.github/workflows/deploy.yml)
     └─► Job 2: deploy (runs after build-and-push succeeds)
           • SSHs into EC2
           • Logs into GHCR on EC2
-          • Pulls the latest image
-          • Restarts containers via docker compose
+          • Creates monitoring network (if missing)
+          • Restarts containers via docker compose (prod compose file)
           • Prunes old images
 ```
 
@@ -34,10 +34,31 @@ GitHub Actions triggers (.github/workflows/deploy.yml)
 | File | Location | Purpose |
 |------|----------|---------|
 | `deploy.yml` | `.github/workflows/deploy.yml` | GitHub Actions workflow definition |
-| `docker-compose.prod.yml` | Project root | Production compose file (uses GHCR image instead of local build) |
-| `docker-compose.yml` | EC2: `~/Codex_code/docker-compose.yml` | Must use GHCR image (not local build) — overwrite with `docker-compose.prod.yml` content |
-| `.env.production` | EC2: `~/Codex_code/.env.production` | Environment variables for production |
-| `promtail-config.yml` | EC2: `~/Codex_code/promtail-config.yml` | Promtail log shipping config |
+| `docker-compose.prod.yml` | Project root + EC2: `~/Codex_code/` | Production compose file (pulls pre-built image from GHCR) |
+| `docker-compose.yml` | Project root | Dev compose file (builds from source locally) — **not used in production** |
+| `.env.production` | EC2: `~/Codex_code/.env.production` only | Environment variables for production — **not tracked in git** |
+| `promtail-config.yml` | Project root + EC2: `~/Codex_code/` | Promtail log shipping config |
+
+> **Important:** `.env.production` contains real secrets and is excluded from git via `.gitignore`. You must manually copy it to EC2 whenever you change it.
+
+---
+
+## EC2 Directory Structure
+
+The deploy script expects this layout at `~/Codex_code/` on EC2:
+
+```
+~/Codex_code/
+├── docker-compose.prod.yml    # Production compose (pulls from GHCR)
+├── .env.production            # Secrets (DB, Redis, JWT) — manual deploy only
+└── promtail-config.yml        # Promtail sidecar config
+```
+
+These files are **not** automatically synced by the pipeline. Copy them manually:
+
+```bash
+scp -i "C:\keys\koder.pem" docker-compose.prod.yml .env.production promtail-config.yml ubuntu@3.109.238.141:~/Codex_code/
+```
 
 ---
 
@@ -63,17 +84,15 @@ Add these 5 secrets:
 
 | Secret Name | Value | Example |
 |-------------|-------|---------|
-| `EC2_HOST` | EC2 public IP or Elastic IP | `54.123.45.67` |
-| `EC2_USERNAME` | SSH username on EC2 | `ubuntu` (Ubuntu AMI) or `ec2-user` (Amazon Linux) |
+| `EC2_HOST` | EC2 public IP or Elastic IP | `3.109.238.141` |
+| `EC2_USERNAME` | SSH username on EC2 | `ubuntu` |
 | `EC2_SSH_KEY` | Full contents of your `.pem` private key file | Paste the entire file including `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----` |
 | `GHCR_PAT` | The PAT you created in Step 1 | `ghp_xxxxxxxxxxxxxxxxxxxx` |
 | `GHCR_USERNAME` | Your GitHub username | `Rocky4554` |
 
 **How to get your `.pem` key contents:**
 ```bash
-# On your local machine (Windows)
-cat C:\path\to\your-key.pem
-
+cat C:\keys\koder.pem
 # Copy the ENTIRE output including BEGIN/END lines
 ```
 
@@ -82,8 +101,7 @@ cat C:\path\to\your-key.pem
 1. Go to repo **Settings → Actions → General**
 2. Scroll to **Workflow permissions**
 3. Select **Read and write permissions**
-4. Check **Allow GitHub Actions to create and approve pull requests** (optional)
-5. Click **Save**
+4. Click **Save**
 
 This allows the workflow to push images to GHCR using `GITHUB_TOKEN`.
 
@@ -92,17 +110,17 @@ This allows the workflow to push images to GHCR using `GITHUB_TOKEN`.
 SSH into your EC2:
 
 ```bash
-ssh -i your-key.pem ubuntu@YOUR_EC2_IP
+ssh -i "C:\keys\koder.pem" ubuntu@3.109.238.141
 ```
 
-#### 4a. Install Docker (if not already installed)
+#### 4a. Install Docker and Docker Compose
 
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install Docker
-sudo apt install -y docker.io docker-compose-plugin
+# Install Docker and Compose plugin
+sudo apt install -y docker.io docker-compose-v2
 
 # Add your user to docker group (so you don't need sudo)
 sudo usermod -aG docker $USER
@@ -110,72 +128,40 @@ sudo usermod -aG docker $USER
 # IMPORTANT: Log out and log back in for the group change to take effect
 exit
 # SSH back in
-ssh -i your-key.pem ubuntu@YOUR_EC2_IP
+ssh -i "C:\keys\koder.pem" ubuntu@3.109.238.141
 
-# Verify Docker works without sudo
+# Verify both work without sudo
 docker ps
+docker compose version
 ```
 
-#### 4b. Clone the repo on EC2 (if not already done)
-
-The deploy script runs `cd ~/Codex_code`, so your project must be cloned there:
+#### 4b. Create project directory and copy files
 
 ```bash
-git clone https://github.com/Rocky4554/Codex_code.git ~/Codex_code
+# On EC2
+mkdir -p ~/Codex_code
 ```
 
-If already cloned, verify the path:
+Then from your local machine:
 ```bash
-ls ~/Codex_code/docker-compose.yml
+scp -i "C:\keys\koder.pem" docker-compose.prod.yml .env.production promtail-config.yml ubuntu@3.109.238.141:~/Codex_code/
 ```
 
-#### 4c. Update docker-compose.yml on EC2 to use GHCR image
+#### 4c. Create Docker network for monitoring
 
-The default `docker-compose.yml` builds from source. Replace it with the prod version that pulls from GHCR:
-
-```bash
-# On EC2 — overwrite with the prod compose content (pulls from GHCR)
-cp ~/Codex_code/docker-compose.prod.yml ~/Codex_code/docker-compose.yml
-```
-
-Or copy from your local machine:
-```powershell
-# Windows PowerShell
-scp -i "C:\path\to\your-key.pem" "E:\Personal Projects\Codex_backend\docker-compose.prod.yml" ubuntu@YOUR_EC2_IP:~/Codex_code/docker-compose.yml
-```
-
-#### 4d. Set up .env.production on EC2
-
-```bash
-cat ~/Codex_code/.env.production
-```
-
-It should contain:
-```env
-NEON_DB_HOST=your-neon-host.neon.tech
-NEON_DB_PORT=5432
-NEON_DB_NAME=codex
-NEON_DB_USERNAME=your-user
-NEON_DB_PASSWORD=your-password
-REDIS_URL=redis://your-redis-host:6379
-REDIS_PASSWORD=your-redis-password
-JWT_SECRET=your-256-bit-secret
-APP_CORS_ALLOWED_ORIGINS=https://your-frontend.com
-```
-
-#### 4e. Create Docker network for monitoring
+The compose file declares a `monitoring` network as external. It must exist before containers start:
 
 ```bash
 docker network create monitoring
 ```
 
-#### 4f. Test manual pull (optional, to verify GHCR access)
+#### 4d. Test manual pull (optional)
 
 ```bash
 # Login to GHCR on EC2
 echo "YOUR_GHCR_PAT" | docker login ghcr.io -u Rocky4554 --password-stdin
 
-# Try pulling (will fail if image hasn't been pushed yet — that's OK)
+# Try pulling
 docker pull ghcr.io/rocky4554/codex_code:latest
 ```
 
@@ -185,16 +171,14 @@ Make sure your EC2 security group allows:
 
 | Type | Port | Source | Purpose |
 |------|------|--------|---------|
-| SSH | 22 | Your IP / GitHub Actions IPs | SSH access for deployment |
+| SSH | 22 | Your IP / 0.0.0.0/0 | SSH access for deployment |
 | Custom TCP | 8080 | 0.0.0.0/0 | App traffic |
-
-**Note:** For tighter security, you can restrict SSH to GitHub Actions IP ranges, but `0.0.0.0/0` on port 22 works for simplicity (your key-based auth protects access).
 
 ### Step 6: Push Code to Trigger the Pipeline
 
 ```bash
 git add .
-git commit -m "add CI/CD pipeline"
+git commit -m "your changes"
 git push origin main
 ```
 
@@ -221,19 +205,29 @@ Then go to your repo's **Actions** tab to watch the pipeline run.
 
 #### Deploy fails: "permission denied (publickey)"
 - Make sure `EC2_SSH_KEY` contains the entire `.pem` file contents
-- Make sure `EC2_USERNAME` is correct (`ubuntu` for Ubuntu, `ec2-user` for Amazon Linux)
+- Make sure `EC2_USERNAME` is correct (`ubuntu` for Ubuntu AMI)
 
-#### Deploy fails: "docker: command not found" on EC2
-- Docker isn't installed — follow Step 4a
+#### Deploy fails: "docker compose: command not found" on EC2
+- Install the compose plugin: `sudo apt install -y docker-compose-v2`
 
-#### App starts but can't connect to database/Redis
-- Check `~/codex/.env.production` has correct values
+#### Deploy succeeds but compose fails: "invalid interpolation format"
+- Check `.env.production` and compose files for invalid `${VAR:}` syntax
+- Valid forms: `${VAR}`, `${VAR:-default}`, `${VAR-default}`
+- Invalid: `${VAR:}` (colon with no default)
+
+#### Deploy succeeds but compose fails: "network monitoring not found"
+- Create it: `docker network create monitoring`
+- The deploy workflow now does this automatically, but check if SSH succeeded
+
+#### App starts but crashes with connection errors
+- Check `~/Codex_code/.env.production` has correct DB/Redis values
+- Test DNS resolution: `nslookup your-redis-host.com`
 - Check EC2 security group allows outbound traffic to Neon/Redis Cloud
 
 ### SSH into EC2 to debug manually
 
 ```bash
-ssh -i your-key.pem ubuntu@YOUR_EC2_IP
+ssh -i "C:\keys\koder.pem" ubuntu@3.109.238.141
 
 # Check running containers
 docker ps
@@ -244,12 +238,15 @@ docker logs codex-app --tail 100
 # Check if image was pulled
 docker images | grep codex
 
+# Health check
+curl http://localhost:8080/actuator/health
+
 # Restart manually
 cd ~/Codex_code
-docker compose --env-file .env.production up -d --pull always
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --pull always
 
 # Check compose logs
-docker compose logs -f
+docker compose -f docker-compose.prod.yml logs -f
 ```
 
 ---
@@ -260,10 +257,10 @@ docker compose logs -f
 
 ```bash
 # Stop the app
-cd ~/Codex_code && docker compose down
+cd ~/Codex_code && docker compose -f docker-compose.prod.yml down
 
 # Restart with fresh pull
-cd ~/Codex_code && docker compose --env-file .env.production up -d --pull always
+cd ~/Codex_code && docker compose -f docker-compose.prod.yml --env-file .env.production up -d --pull always
 
 # View real-time logs
 docker logs -f codex-app
@@ -279,6 +276,21 @@ docker image prune -a  # Remove ALL unused images
 # Manually trigger a rebuild (re-push same commit)
 git commit --allow-empty -m "trigger rebuild"
 git push origin main
+```
+
+---
+
+## Updating .env.production
+
+Since `.env.production` is not in git, changes must be manually copied to EC2:
+
+```bash
+# From your local machine
+scp -i "C:\keys\koder.pem" .env.production ubuntu@3.109.238.141:~/Codex_code/
+
+# Then restart the app on EC2
+ssh -i "C:\keys\koder.pem" ubuntu@3.109.238.141 \
+  "cd ~/Codex_code && docker compose -f docker-compose.prod.yml --env-file .env.production up -d --force-recreate"
 ```
 
 ---
@@ -307,15 +319,16 @@ The PAT you created has an expiration date. When it expires:
                                       │  3. SSH into EC2  │
                                       └────────┬─────────┘
                                                │
-                                               │ SSH + docker pull
+                                               │ SSH + docker compose
                                                ▼
 ┌──────────────┐                      ┌──────────────────┐
-│  GHCR        │ ◄─── docker pull ──  │  AWS EC2         │
-│  (Registry)  │                      │                   │
-│  ghcr.io/    │                      │  docker compose   │
-│  rocky4554/  │                      │  up -d            │
-│  codex_code  │                      │                   │
-└──────────────┘                      └──────────────────┘
+│  GHCR        │ ◄── --pull always ── │  AWS EC2         │
+│  (Registry)  │                      │  ~/Codex_code/   │
+│  ghcr.io/    │                      │                   │
+│  rocky4554/  │                      │  docker-compose   │
+│  codex_code  │                      │    .prod.yml      │
+└──────────────┘                      │  .env.production  │
+                                      └──────────────────┘
 ```
 
 ---
@@ -325,23 +338,40 @@ The PAT you created has an expiration date. When it expires:
 The workflow lives at `.github/workflows/deploy.yml`. Key sections:
 
 - **Trigger:** `on: push: branches: [main]` — only runs on main branch pushes
-- **Job 1 (build-and-push):** Uses `docker/build-push-action` with GHCR login
+- **Job 1 (build-and-push):** Uses `docker/build-push-action` with GHCR login via `GITHUB_TOKEN`
 - **Job 2 (deploy):** Uses `appleboy/ssh-action` to SSH and run deploy commands
-- **Image tags:** Every build gets `latest` + the short commit SHA (e.g., `a1b2c3d`) for rollback capability
+- **Image tags:** Every build gets `latest` + the short commit SHA (e.g., `d22ee09`) for rollback capability
+
+### What the deploy script does on EC2
+
+```bash
+# 1. Login to GHCR
+echo "$GHCR_PAT" | docker login ghcr.io -u $GHCR_USERNAME --password-stdin
+
+# 2. Create monitoring network if missing
+docker network create monitoring 2>/dev/null || true
+
+# 3. Pull latest image and restart containers
+cd ~/Codex_code
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --pull always
+
+# 4. Clean up old images
+docker image prune -f
+```
 
 ### Rolling back to a previous version
 
 ```bash
 # On EC2, pull a specific commit SHA tag instead of latest
-docker pull ghcr.io/rocky4554/codex_code:a1b2c3d
+docker pull ghcr.io/rocky4554/codex_code:d22ee09
 
-# Update docker-compose.yml to use that tag, or run directly:
-docker stop codex-app
-docker rm codex-app
+# Then run it
+docker stop codex-app && docker rm codex-app
 docker run -d --name codex-app \
-  --env-file ~/codex/.env.production \
+  --env-file ~/Codex_code/.env.production \
   -p 8080:8080 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /tmp/codex:/tmp/codex \
-  ghcr.io/rocky4554/codex_code:a1b2c3d
+  --network monitoring \
+  ghcr.io/rocky4554/codex_code:d22ee09
 ```
