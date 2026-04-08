@@ -2,6 +2,9 @@ package com.codex.platform.execution.service;
 
 import com.codex.platform.common.enums.SubmissionStatus;
 import com.codex.platform.common.util.OutputNormalizer;
+import com.codex.platform.execution.client.ExecutorAgentClient;
+import com.codex.platform.execution.client.dto.ExecuteRequest;
+import com.codex.platform.execution.client.dto.ExecuteResponse;
 import com.codex.platform.execution.dto.ExecutionResult;
 import com.codex.platform.execution.entity.Language;
 import com.codex.platform.execution.repository.LanguageRepository;
@@ -16,6 +19,7 @@ import com.codex.platform.submission.repository.SubmissionRepository;
 import com.codex.platform.submission.service.ResultProcessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -34,8 +38,17 @@ public class ExecutionService {
     private final TestCaseRepository testCaseRepository;
     private final LanguageRepository languageRepository;
     private final DockerExecutor dockerExecutor;
+    private final ExecutorAgentClient executorAgentClient;
     private final ResultProcessor resultProcessor;
     private final SseService sseService;
+
+    /**
+     * "local"  → drive DockerExecutor on the same machine (legacy path).
+     * "remote" → POST to the executor agent on EC2 over HTTPS.
+     * Default is "local" so deployments without the new env var keep working.
+     */
+    @Value("${execution.mode:local}")
+    private String executionMode;
 
     // Metrics
     private final AtomicLong totalSubmissions = new AtomicLong(0);
@@ -45,15 +58,19 @@ public class ExecutionService {
 
     /**
      * Main entry point for executing a submission.
-     * Uses a SINGLE container for the entire submission — compile once, run all
-     * test cases.
+     *
+     * <p>Branches on {@code execution.mode}:
+     * <ul>
+     *   <li>{@code local} — drive {@link DockerExecutor} on the same machine</li>
+     *   <li>{@code remote} — POST to the executor agent on EC2</li>
+     * </ul>
+     *
+     * <p>Both branches share the same persistence and SSE plumbing — only the
+     * "where does the container actually run" decision differs.
      */
     public void executeSubmission(UUID submissionId) {
-        log.info("Starting execution for submission: {}", submissionId);
+        log.info("Starting execution for submission: {} (mode={})", submissionId, executionMode);
         totalSubmissions.incrementAndGet();
-
-        String containerId = null;
-        Path tempDir = null;
 
         try {
             // Load submission
@@ -80,6 +97,34 @@ public class ExecutionService {
                 throw new IllegalArgumentException("No test cases found for problem");
             }
 
+            if ("remote".equalsIgnoreCase(executionMode)) {
+                executeRemote(submission, problem, language, testCases);
+            } else {
+                executeLocal(submission, problem, language, testCases);
+            }
+
+        } catch (Exception e) {
+            log.error("Error executing submission: {}", submissionId, e);
+
+            submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
+                    .ifPresent(submission -> {
+                        submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
+                        submissionRepository.save(submission);
+                        sseService.sendEvent(submissionId, SubmissionStatus.RUNTIME_ERROR);
+                    });
+            failedExecutions.incrementAndGet();
+        }
+    }
+
+    /**
+     * Legacy in-process path — runs containers on the local Docker daemon.
+     */
+    private void executeLocal(Submission submission, Problem problem, Language language, List<TestCase> testCases) {
+        UUID submissionId = submission.getId();
+        String containerId = null;
+        Path tempDir = null;
+
+        try {
             // ── Single Container Lifecycle ──────────────────────────────
             // 1. Prepare workspace (write source file to temp dir)
             tempDir = dockerExecutor.prepareTempDirectory(
@@ -189,27 +234,108 @@ public class ExecutionService {
 
             log.info("╔══════════════════════════════════════════════════");
             log.info("║ Submission  : {}", submissionId);
-            log.info("║ Verdict     : {}", finalStatus);
+            log.info("║ Verdict     : {} (local)", finalStatus);
             log.info("║ Test Cases  : {}/{} passed", passedCount, testCases.size());
             log.info("║ Time        : {}ms (limit: {}ms)", totalExecutionTime, problem.getTimeLimitMs());
             log.info("║ Memory      : {}MB (limit: {}MB)", submissionResult.getMemoryUsedMb(),
                     problem.getMemoryLimitMb());
             log.info("╚══════════════════════════════════════════════════");
 
+        } catch (RuntimeException re) {
+            throw re;
         } catch (Exception e) {
-            log.error("Error executing submission: {}", submissionId, e);
-
-            submissionRepository.findById(Objects.requireNonNull(submissionId, "Submission ID is required"))
-                    .ifPresent(submission -> {
-                        submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
-                        submissionRepository.save(submission);
-                        sseService.sendEvent(submissionId, SubmissionStatus.RUNTIME_ERROR);
-                    });
-            failedExecutions.incrementAndGet();
+            // Wrap checked exceptions so the outer handler in executeSubmission picks them up
+            throw new RuntimeException("Local execution failed", e);
         } finally {
-            // 5. Cleanup — always runs, even on error
+            // Cleanup — always runs, even on error
             dockerExecutor.cleanup(containerId, tempDir);
         }
+    }
+
+    /**
+     * Remote path — POST the submission to the executor agent on EC2 over HTTPS.
+     * The agent runs the container, returns the verdict + per-test results, and
+     * we map them back into the existing {@link SubmissionResult} entity.
+     */
+    private void executeRemote(Submission submission, Problem problem, Language language, List<TestCase> testCases) {
+        UUID submissionId = submission.getId();
+
+        // Build the request from the loaded entities
+        List<ExecuteRequest.TestCase> wireTestCases = testCases.stream()
+                .map(tc -> ExecuteRequest.TestCase.builder()
+                        .id(tc.getId().toString())
+                        .stdin(tc.getInput())
+                        .expectedStdout(tc.getExpectedOutput())
+                        .build())
+                .toList();
+
+        ExecuteRequest request = ExecuteRequest.builder()
+                .submissionId(submissionId)
+                .language(language.getName())
+                .dockerImage(language.getDockerImage())
+                .compileCommand(language.getCompileCommand())
+                .executeCommand(language.getExecuteCommand())
+                .fileExtension(language.getFileExtension())
+                .sourceCode(submission.getSourceCode())
+                .compileTimeoutMs(60_000)
+                .runTimeoutMs(problem.getTimeLimitMs())
+                .memoryLimitMb(problem.getMemoryLimitMb())
+                .testCases(wireTestCases)
+                .build();
+
+        ExecuteResponse response;
+        try {
+            response = executorAgentClient.execute(request);
+        } catch (ExecutorAgentClient.ExecutorAgentException agentError) {
+            log.error("Submission {}: executor agent unreachable: {}", submissionId, agentError.getMessage());
+            // Persist a clear error so the user sees a useful message instead of a hang.
+            SubmissionResult errorResult = new SubmissionResult();
+            errorResult.setSubmissionId(submissionId);
+            errorResult.setExecutionTimeMs(0L);
+            errorResult.setMemoryUsedMb(0L);
+            errorResult.setPassedTestCases(0);
+            errorResult.setTotalTestCases(testCases.size());
+            errorResult.setStdout("");
+            errorResult.setStderr("Executor unavailable: " + agentError.getMessage());
+            resultProcessor.saveResult(submission, errorResult, SubmissionStatus.RUNTIME_ERROR);
+            sseService.sendEvent(submissionId, SubmissionStatus.RUNTIME_ERROR);
+            failedExecutions.incrementAndGet();
+            return;
+        }
+
+        // Map agent string status to our enum, defaulting safely
+        SubmissionStatus finalStatus;
+        try {
+            finalStatus = SubmissionStatus.valueOf(response.getStatus());
+        } catch (IllegalArgumentException unknown) {
+            log.warn("Submission {}: agent returned unknown status '{}', mapping to RUNTIME_ERROR",
+                    submissionId, response.getStatus());
+            finalStatus = SubmissionStatus.RUNTIME_ERROR;
+        }
+
+        SubmissionResult submissionResult = new SubmissionResult();
+        submissionResult.setSubmissionId(submissionId);
+        submissionResult.setExecutionTimeMs(response.getCompileTimeMs() + response.getTotalExecTimeMs());
+        submissionResult.setMemoryUsedMb(0L); // TODO: Implement memory tracking
+        submissionResult.setPassedTestCases(response.getPassedTestCases());
+        submissionResult.setTotalTestCases(response.getTotalTestCases());
+        submissionResult.setStdout(response.getStdout());
+        submissionResult.setStderr(response.getStderr());
+
+        resultProcessor.saveResult(submission, submissionResult, finalStatus);
+        sseService.sendEvent(submissionId, finalStatus);
+
+        successfulExecutions.incrementAndGet();
+        cumulativeExecutionTimeMs.addAndGet(submissionResult.getExecutionTimeMs());
+
+        log.info("╔══════════════════════════════════════════════════");
+        log.info("║ Submission  : {}", submissionId);
+        log.info("║ Verdict     : {} (remote)", finalStatus);
+        log.info("║ Test Cases  : {}/{} passed", response.getPassedTestCases(), response.getTotalTestCases());
+        log.info("║ Compile     : {}ms", response.getCompileTimeMs());
+        log.info("║ Run total   : {}ms (limit: {}ms)", response.getTotalExecTimeMs(), problem.getTimeLimitMs());
+        log.info("║ Memory      : limit {}MB", problem.getMemoryLimitMb());
+        log.info("╚══════════════════════════════════════════════════");
     }
 
     // Metric Getters

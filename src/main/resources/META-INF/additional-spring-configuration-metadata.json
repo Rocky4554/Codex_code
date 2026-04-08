@@ -1,0 +1,38 @@
+{
+  "properties": [
+    {
+      "name": "execution.mode",
+      "type": "java.lang.String",
+      "description": "Execution mode: 'local' drives Docker on the same machine, 'remote' POSTs submissions to the executor agent on EC2.",
+      "defaultValue": "local"
+    },
+    {
+      "name": "execution.cleanup-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether DockerExecutor should delete temp directories after each submission.",
+      "defaultValue": true
+    },
+    {
+      "name": "execution.worker-count",
+      "type": "java.lang.Integer",
+      "description": "Number of background submission worker threads.",
+      "defaultValue": 1
+    },
+    {
+      "name": "executor.agent.base-url",
+      "type": "java.lang.String",
+      "description": "HTTPS base URL of the EC2 executor agent. Required when execution.mode=remote."
+    },
+    {
+      "name": "executor.agent.token",
+      "type": "java.lang.String",
+      "description": "Shared bearer token used to authenticate against the executor agent."
+    },
+    {
+      "name": "executor.agent.timeout-ms",
+      "type": "java.lang.Integer",
+      "description": "Read timeout in milliseconds for executor agent HTTP calls.",
+      "defaultValue": 90000
+    }
+  ]
+}
