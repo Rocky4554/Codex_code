@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,5 +30,15 @@ public class SubmissionController {
     @GetMapping("/{id}")
     public ResponseEntity<SubmissionResponse> getSubmission(@PathVariable UUID id) {
         return ResponseEntity.ok(submissionService.getSubmission(id));
+    }
+
+    /**
+     * List the current user's submissions.
+     * Optional filter: ?problemId={uuid} to scope to a specific problem.
+     */
+    @GetMapping
+    public ResponseEntity<List<SubmissionResponse>> listMySubmissions(
+            @RequestParam(required = false) UUID problemId) {
+        return ResponseEntity.ok(submissionService.listMySubmissions(problemId));
     }
 }

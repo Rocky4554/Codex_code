@@ -48,41 +48,41 @@ public class DataInitializer implements CommandLineRunner {
     private void initializeLanguages() {
         log.info("Initializing languages...");
 
-        // Python
+        // Python (pre-compiled .pyc bytecode)
         Language python = new Language();
         python.setName("Python");
         python.setVersion("3.11");
-        python.setDockerImage("python:3.11-slim");
+        python.setDockerImage("codex-python:latest");
         python.setFileExtension(".py");
         python.setCompileCommand(null);
         python.setExecuteCommand("python solution.py");
         languageRepository.save(python);
 
-        // Java
+        // Java (CDS archive for fast JVM startup)
         Language java = new Language();
         java.setName("Java");
         java.setVersion("17");
-        java.setDockerImage("eclipse-temurin:17-jdk");
+        java.setDockerImage("codex-java:latest");
         java.setFileExtension(".java");
         java.setCompileCommand("javac solution.java");
-        java.setExecuteCommand("java solution");
+        java.setExecuteCommand("java -Xshare:on solution");
         languageRepository.save(java);
 
-        // C++
+        // C++ (precompiled bits/stdc++.h header)
         Language cpp = new Language();
         cpp.setName("C++");
         cpp.setVersion("11");
-        cpp.setDockerImage("gcc:latest");
+        cpp.setDockerImage("codex-cpp:latest");
         cpp.setFileExtension(".cpp");
         cpp.setCompileCommand("g++ -std=c++11 -o solution solution.cpp");
         cpp.setExecuteCommand("./solution");
         languageRepository.save(cpp);
 
-        // JavaScript (Node.js)
+        // JavaScript (V8 module cache warmed)
         Language javascript = new Language();
         javascript.setName("JavaScript");
         javascript.setVersion("20");
-        javascript.setDockerImage("node:20-slim");
+        javascript.setDockerImage("codex-javascript:latest");
         javascript.setFileExtension(".js");
         javascript.setCompileCommand(null);
         javascript.setExecuteCommand("node solution.js");

@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -151,6 +153,43 @@ public class SubmissionService {
         });
 
         return builder.build();
+    }
+
+    /**
+     * List the current user's submissions, optionally filtered by problem.
+     * Newest first. Includes result details when available.
+     */
+    @Transactional(readOnly = true)
+    public List<SubmissionResponse> listMySubmissions(UUID problemId) {
+        UUID currentUserId = JwtAuthenticationFilter.getCurrentUserId();
+
+        List<Submission> submissions = (problemId != null)
+                ? submissionRepository.findByUserIdAndProblemId(currentUserId, problemId)
+                : submissionRepository.findByUserId(currentUserId);
+
+        return submissions.stream()
+                .sorted(Comparator.comparing(Submission::getCreatedAt).reversed())
+                .map(submission -> {
+                    SubmissionResponse.SubmissionResponseBuilder builder = SubmissionResponse.builder()
+                            .id(submission.getId())
+                            .userId(submission.getUserId())
+                            .problemId(submission.getProblemId())
+                            .languageId(submission.getLanguageId())
+                            .status(submission.getStatus())
+                            .createdAt(submission.getCreatedAt());
+
+                    submissionResultRepository.findById(submission.getId()).ifPresent(result -> {
+                        builder.executionTimeMs(result.getExecutionTimeMs())
+                                .memoryUsedMb(result.getMemoryUsedMb())
+                                .passedTestCases(result.getPassedTestCases())
+                                .totalTestCases(result.getTotalTestCases())
+                                .stdout(result.getStdout())
+                                .stderr(result.getStderr());
+                    });
+
+                    return builder.build();
+                })
+                .toList();
     }
 
     @Transactional(readOnly = true)
