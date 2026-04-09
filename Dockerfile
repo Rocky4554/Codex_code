@@ -24,10 +24,12 @@ RUN mkdir -p /tmp/codex/submissions
 
 EXPOSE 8080
 
-# JVM sizing for EC2 t2.small (2 GB RAM)
-#   Redis ~50MB, OS ~300MB, code-exec containers ~256MB each
-#   Leaves ~400MB for the JVM
+# JVM sizing for Northflank 512MB container
+#   OS ~80MB, Hikari pool (5 conns) ~30MB, Redisson ~40MB
+#   Leaves ~300MB for the JVM heap
 ENTRYPOINT ["java", \
-  "-Xms128m", "-Xmx384m", \
+  "-Xms64m", "-Xmx300m", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=60.0", \
   "-Duser.timezone=UTC", \
   "-jar", "app.jar"]
