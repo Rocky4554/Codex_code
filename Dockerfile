@@ -24,11 +24,11 @@ RUN mkdir -p /tmp/codex/submissions
 
 EXPOSE 8080
 
-# JVM sizing for Northflank 512MB container
-#   OS ~80MB, Hikari pool (5 conns) ~30MB, Redisson ~40MB
-#   Leaves ~300MB for the JVM heap
+# JVM sizing for 1GB EC2 (shared with executor agent)
+#   OS ~80MB, Docker ~40MB, Other services ~150MB
+#   Leave only 130MB for backend JVM (executor agent gets 100MB)
 ENTRYPOINT ["java", \
-  "-Xms64m", "-Xmx300m", \
+  "-Xms32m", "-Xmx130m", \
   "-XX:+UseContainerSupport", \
   "-XX:MaxRAMPercentage=60.0", \
   "-Duser.timezone=UTC", \

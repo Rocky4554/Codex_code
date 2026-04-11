@@ -42,11 +42,13 @@ public class SecurityConfig {
                         .contentTypeOptions(Customizer.withDefaults()))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/api/health").permitAll()
+                        .requestMatchers("/", "/api/health").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/problems", "/api/problems/*").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/problems", "/api/problems/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/languages").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/languages").permitAll()
 
                         // Protected endpoints
                         .requestMatchers("/api/submissions/**").authenticated()
@@ -70,7 +72,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .toList());
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
 
