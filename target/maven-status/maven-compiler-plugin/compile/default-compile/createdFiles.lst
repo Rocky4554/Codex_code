@@ -10,6 +10,7 @@ com\codex\platform\execution\service\ExecutionService.class
 com\codex\platform\realtime\service\SseService.class
 com\codex\platform\config\DataInitializer.class
 com\codex\platform\common\util\OutputNormalizer.class
+com\codex\platform\monitoring\controller\RootController.class
 com\codex\platform\monitoring\controller\HealthController.class
 com\codex\platform\submission\repository\SubmissionResultRepository.class
 com\codex\platform\common\enums\ProblemDifficulty.class
@@ -32,6 +33,7 @@ com\codex\platform\common\exception\ErrorResponse.class
 com\codex\platform\execution\client\dto\ExecuteRequest.class
 com\codex\platform\submission\service\SubmissionService.class
 com\codex\platform\submission\entity\Submission.class
+com\codex\platform\problem\service\TestCaseService.class
 com\codex\platform\config\SecurityConfig.class
 com\codex\platform\problem\controller\ProblemController.class
 com\codex\platform\auth\dto\AuthResponse.class
@@ -41,12 +43,14 @@ com\codex\platform\submission\dto\SubmitCodeResponse.class
 com\codex\platform\execution\service\LanguageService.class
 com\codex\platform\submission\repository\SubmissionRepository.class
 com\codex\platform\execution\client\dto\ExecuteRequest$TestCase$TestCaseBuilder.class
+com\codex\platform\problem\controller\TestCaseController.class
 com\codex\platform\queue\worker\SubmissionWorker.class
 com\codex\platform\realtime\controller\SseController.class
 com\codex\platform\auth\dto\RegisterRequest.class
 com\codex\platform\common\exception\GlobalExceptionHandler.class
 com\codex\platform\submission\entity\SubmissionResult.class
 com\codex\platform\user\entity\User.class
+com\codex\platform\problem\dto\TestCaseRequest.class
 com\codex\platform\config\RedissonConfig.class
 com\codex\platform\execution\client\dto\ExecuteResponse.class
 com\codex\platform\config\DockerConfig.class

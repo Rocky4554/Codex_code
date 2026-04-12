@@ -42,10 +42,13 @@ E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\proble
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\monitoring\controller\RootController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\client\ExecutorAgentClient.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\config\DataInitializer.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\service\TestCaseService.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\entity\Submission.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\repository\UserRepository.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\repository\TestCaseRepository.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\entity\Language.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\controller\TestCaseController.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\dto\TestCaseRequest.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\auth\filter\JwtAuthenticationFilter.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\service\ExecutionService.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\controller\UserController.java
