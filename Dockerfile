@@ -32,4 +32,5 @@ ENTRYPOINT ["java", \
   "-XX:+UseContainerSupport", \
   "-XX:MaxRAMPercentage=60.0", \
   "-Duser.timezone=UTC", \
+  "-Dspring.profiles.active=prod", \
   "-jar", "app.jar"]
