@@ -16,6 +16,9 @@ FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
+# Set the port for Render
+ENV PORT=8080
+
 # Copy the built JAR
 COPY --from=builder /build/target/*.jar app.jar
 
