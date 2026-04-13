@@ -1,11 +1,15 @@
 package com.codex.platform.realtime.service;
 
 import com.codex.platform.common.enums.SubmissionStatus;
+import com.codex.platform.submission.entity.SubmissionResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -14,10 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class SseService {
 
     private final Map<UUID, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Register an emitter for a submission
@@ -47,21 +53,48 @@ public class SseService {
     }
 
     /**
-     * Send an event to a submission's subscribers
+     * Send a status-only event (used for intermediate statuses like RUNNING)
      */
     public void sendEvent(UUID submissionId, SubmissionStatus status) {
+        sendEvent(submissionId, status, null);
+    }
+
+    /**
+     * Send an event with full result payload as JSON.
+     * The frontend receives: { status, stdout, stderr, testsPassed, totalTests, executionTimeMs }
+     */
+    public void sendEvent(UUID submissionId, SubmissionStatus status, SubmissionResult result) {
         List<SseEmitter> emitterList = emitters.get(submissionId);
 
         if (emitterList == null || emitterList.isEmpty()) {
             return;
         }
 
+        // Build JSON payload
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("status", Objects.requireNonNull(status, "Submission status is required").toString());
+
+        if (result != null) {
+            payload.put("stdout", result.getStdout());
+            payload.put("stderr", result.getStderr());
+            payload.put("testsPassed", result.getPassedTestCases());
+            payload.put("totalTests", result.getTotalTestCases());
+            payload.put("executionTimeMs", result.getExecutionTimeMs());
+        }
+
+        String json;
+        try {
+            json = objectMapper.writeValueAsString(payload);
+        } catch (Exception e) {
+            log.error("Error serializing SSE payload for submission: {}", submissionId, e);
+            json = "{\"status\":\"" + status + "\"}";
+        }
+
         for (SseEmitter emitter : emitterList) {
             try {
-                String payload = Objects.requireNonNull(status, "Submission status is required").toString();
                 emitter.send(SseEmitter.event()
                         .name("status")
-                        .data(Objects.requireNonNull((Object) payload)));
+                        .data(json));
             } catch (IOException e) {
                 log.error("Error sending SSE event for submission: {}", submissionId, e);
                 removeEmitter(submissionId, emitter);

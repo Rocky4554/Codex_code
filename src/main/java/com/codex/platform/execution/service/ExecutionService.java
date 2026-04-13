@@ -323,7 +323,7 @@ public class ExecutionService {
         submissionResult.setStderr(response.getStderr());
 
         resultProcessor.saveResult(submission, submissionResult, finalStatus);
-        sseService.sendEvent(submissionId, finalStatus);
+        sseService.sendEvent(submissionId, finalStatus, submissionResult);
 
         successfulExecutions.incrementAndGet();
         cumulativeExecutionTimeMs.addAndGet(submissionResult.getExecutionTimeMs());
