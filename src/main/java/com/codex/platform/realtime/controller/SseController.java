@@ -32,6 +32,24 @@ public class SseController {
         if (!submission.getUserId().equals(currentUserId)) {
             throw new AccessDeniedException("You are not authorized to view this submission events");
         }
-        return sseService.registerEmitter(id);
+        
+        // Register emitter and immediately send current status if submission is already complete
+        SseEmitter emitter = sseService.registerEmitter(id);
+        
+        // If submission already has a terminal status, send it immediately
+        if (submission.getStatus() != null && isTerminalStatus(submission.getStatus())) {
+            sseService.sendEvent(id, submission.getStatus());
+        }
+        
+        return emitter;
+    }
+    
+    private boolean isTerminalStatus(com.codex.platform.common.enums.SubmissionStatus status) {
+        return status == com.codex.platform.common.enums.SubmissionStatus.ACCEPTED ||
+                status == com.codex.platform.common.enums.SubmissionStatus.WRONG_ANSWER ||
+                status == com.codex.platform.common.enums.SubmissionStatus.TIME_LIMIT_EXCEEDED ||
+                status == com.codex.platform.common.enums.SubmissionStatus.MEMORY_LIMIT_EXCEEDED ||
+                status == com.codex.platform.common.enums.SubmissionStatus.RUNTIME_ERROR ||
+                status == com.codex.platform.common.enums.SubmissionStatus.COMPILATION_ERROR;
     }
 }

@@ -49,6 +49,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.HEAD, "/api/problems", "/api/problems/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/languages").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/api/languages").permitAll()
+                        // Public problem/test-case creation for seeding (remove in production)
+                        .requestMatchers(HttpMethod.POST, "/api/problems").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/test-cases/**").permitAll()
 
                         // Protected endpoints
                         .requestMatchers("/api/submissions/**").authenticated()

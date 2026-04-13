@@ -1,7 +1,11 @@
 /**
  * Seed script to add problems and test cases to Codex backend
- * Usage: node seed-problems.js <backend-url> <jwt-token>
- * Example: node seed-problems.js https://your-backend.onrender.com your-jwt-token
+ * Usage: node seed-problems.js [backend-url]
+ * 
+ * Default URL: https://codex-backend-demo.onrender.com
+ * Examples:
+ *   node seed-problems.js                    # uses default
+ *   node seed-problems.js http://localhost:8080  # local dev
  */
 
 const problems = [
@@ -117,19 +121,16 @@ const problems = [
     }
 ];
 
+const DEFAULT_BACKEND_URL = 'https://codex-backend-demo.onrender.com';
+
 async function seedProblems() {
-    const baseUrl = process.argv[2] || 'http://localhost:8080';
-    const jwtToken = process.argv[3];
+    const baseUrl = process.argv[2] || DEFAULT_BACKEND_URL;
     
     console.log(`Seeding problems to ${baseUrl}...\n`);
     
     const headers = {
         'Content-Type': 'application/json'
     };
-    
-    if (jwtToken) {
-        headers['Authorization'] = `Bearer ${jwtToken}`;
-    }
     
     for (const problem of problems) {
         try {
