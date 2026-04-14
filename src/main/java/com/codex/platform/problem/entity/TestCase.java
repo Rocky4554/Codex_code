@@ -24,7 +24,7 @@ public class TestCase {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String input;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT")
     private String expectedOutput;
 
     @Column(nullable = false)
