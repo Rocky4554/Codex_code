@@ -36,62 +36,50 @@ public class SubmissionWorker {
             Thread workerThread = new Thread(() -> {
                 log.info("Submission worker-{} started", workerId);
 
-                int consecutiveErrors = 0;
+                int emptyPollCount = 0;
 
                 while (!Thread.currentThread().isInterrupted()) {
                     RLock lock = null;
                     UUID submissionId = null;
 
                     try {
-                        // Dequeue submission (blocks up to 10s, then returns null)
-                        submissionId = queueService.dequeue();
+                        // Non-blocking LPOP with adaptive backoff
+                        submissionId = queueService.dequeue(emptyPollCount);
                         if (submissionId == null) {
-                            consecutiveErrors = 0;
-                            continue; // No item in queue, loop back immediately
+                            emptyPollCount++;
+                            continue;
                         }
-                        consecutiveErrors = 0;
-                        log.info("Worker-{} dequeued submission: {}", workerId, submissionId);
 
-                        // Acquire Redis lock
+                        // Got a job — reset idle counter
+                        emptyPollCount = 0;
+                        log.info("Worker-{} dequeued: {}", workerId, submissionId);
+
+                        // Acquire distributed lock to prevent duplicate processing
                         lock = queueService.acquireLock(submissionId);
-
                         if (lock != null) {
-                            // Process submission
+                            log.info("Worker-{} starting execution for {}", workerId, submissionId);
                             executionService.executeSubmission(submissionId);
+                            log.info("Worker-{} finished execution for {}", workerId, submissionId);
                         } else {
-                            log.warn("Worker-{} could not acquire lock for submission: {}, skipping", workerId,
-                                    submissionId);
+                            log.warn("Worker-{} could not acquire lock for {}, re-queuing", workerId, submissionId);
                             queueService.enqueue(submissionId);
-                            log.info("Worker-{} re-enqueued submission after lock miss: {}", workerId, submissionId);
                         }
 
                     } catch (InterruptedException e) {
                         log.info("Worker-{} interrupted, shutting down", workerId);
                         Thread.currentThread().interrupt();
                         break;
-                    } catch (Exception e) {
-                        log.error("Worker-{} error processing submission: {}", workerId, submissionId, e);
-
-                        // Backoff on Redis / infrastructure errors to avoid tight error loops
-                        try {
-                            consecutiveErrors++;
-                            long backoffMs = Math.min(5_000L * consecutiveErrors, 30_000L);
-                            log.warn("Worker-{} backing off for {}ms after {} consecutive error(s)",
-                                    workerId, backoffMs, consecutiveErrors);
-                            Thread.sleep(backoffMs);
-                        } catch (InterruptedException ie) {
+                    } catch (Throwable t) {
+                        log.error("CRITICAL: Worker-{} unhandled error for {}: {}",
+                                workerId, submissionId, t.getMessage(), t);
+                        try { Thread.sleep(5_000); } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                             break;
                         }
-                        continue;
                     } finally {
-                        // Always release lock
                         if (lock != null) {
-                            try {
-                                queueService.releaseLock(lock);
-                            } catch (Exception e) {
-                                log.debug("Could not release lock (may already be released): {}", e.getMessage());
-                            }
+                            try { queueService.releaseLock(lock); }
+                            catch (Exception e) { log.debug("Lock release failed: {}", e.getMessage()); }
                         }
                     }
                 }

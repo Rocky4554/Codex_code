@@ -38,11 +38,15 @@ public class RedissonConfig {
                 .setPassword(password)
                 .setConnectionPoolSize(connectionPoolSize)
                 .setConnectionMinimumIdleSize(connectionMinimumIdleSize)
+                .setPingConnectionInterval(30_000) // Keep-alive for Upstash/Cloud Redis
                 .setRetryAttempts(3)
                 .setRetryInterval(1500)
                 .setTimeout(10_000)
                 .setConnectTimeout(10_000)
                 .setDnsMonitoringInterval(60_000); // Upstash rotates DNS frequently; reduce churn
+
+        // Use JSON codec for stable cross-thread serialization/deserialization
+        config.setCodec(new org.redisson.codec.JsonJacksonCodec());
 
         // Tell Redisson to use the default Java DNS resolver instead of Netty's
         // built-in resolver

@@ -15,7 +15,9 @@ com\codex\platform\monitoring\controller\HealthController.class
 com\codex\platform\submission\repository\SubmissionResultRepository.class
 com\codex\platform\common\enums\ProblemDifficulty.class
 com\codex\platform\execution\client\ExecutorAgentClient$ExecutorAgentException.class
+com\codex\platform\submission\dto\SubmissionResultDto.class
 com\codex\platform\execution\client\dto\ExecuteResponse$TestResult.class
+com\codex\platform\submission\service\AsyncResultPersister.class
 com\codex\platform\auth\controller\AuthController.class
 com\codex\platform\execution\client\dto\ExecuteRequest$ExecuteRequestBuilder.class
 com\codex\platform\user\controller\UserController.class
@@ -27,6 +29,7 @@ com\codex\platform\submission\service\SubmissionService$1.class
 com\codex\platform\problem\repository\ProblemRepository.class
 com\codex\platform\monitoring\controller\MonitoringController.class
 com\codex\platform\problem\repository\TestCaseRepository.class
+com\codex\platform\submission\dto\SubmissionResultDto$SubmissionResultDtoBuilder.class
 com\codex\platform\CodexPlatformApplication.class
 com\codex\platform\queue\service\QueueService.class
 com\codex\platform\common\exception\ErrorResponse.class
@@ -49,12 +52,14 @@ com\codex\platform\realtime\controller\SseController.class
 com\codex\platform\auth\dto\RegisterRequest.class
 com\codex\platform\common\exception\GlobalExceptionHandler.class
 com\codex\platform\submission\entity\SubmissionResult.class
+com\codex\platform\submission\service\SubmissionCacheService.class
 com\codex\platform\user\entity\User.class
 com\codex\platform\problem\dto\TestCaseRequest.class
 com\codex\platform\config\RedissonConfig.class
 com\codex\platform\execution\client\dto\ExecuteResponse.class
 com\codex\platform\config\DockerConfig.class
 com\codex\platform\common\enums\UserProblemStatusEnum.class
+com\codex\platform\config\AsyncConfig.class
 com\codex\platform\common\exception\ErrorResponse$ErrorResponseBuilder.class
 com\codex\platform\execution\service\DockerExecutor.class
 com\codex\platform\auth\service\AuthService.class

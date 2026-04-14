@@ -42,17 +42,13 @@ public class SecurityConfig {
                         .contentTypeOptions(Customizer.withDefaults()))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/", "/api/health").permitAll()
+                        .requestMatchers("/", "/api/health", "/error").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/problems", "/api/problems/*").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/api/problems", "/api/problems/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/languages").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/api/languages").permitAll()
-                        // Public problem/test-case creation for seeding (remove in production)
-                        .requestMatchers(HttpMethod.POST, "/api/problems").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/test-cases/**").permitAll()
-
                         // Protected endpoints
                         .requestMatchers("/api/submissions/**").authenticated()
                         .requestMatchers("/api/user/**").authenticated()

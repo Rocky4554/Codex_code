@@ -23,7 +23,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SseService {
 
     private final Map<UUID, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * Injected Spring-managed ObjectMapper (respects all registered modules/serializers).
+     * Previously was a raw {@code new ObjectMapper()} which skipped custom configuration.
+     */
+    private final ObjectMapper objectMapper;
 
     /**
      * Register an emitter for a submission
@@ -67,6 +72,7 @@ public class SseService {
         List<SseEmitter> emitterList = emitters.get(submissionId);
 
         if (emitterList == null || emitterList.isEmpty()) {
+            log.debug("No SSE subscribers for submission {}, skipping event dispatch", submissionId);
             return;
         }
 

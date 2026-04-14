@@ -5,6 +5,7 @@ import com.codex.platform.common.enums.SubmissionStatus;
 import com.codex.platform.execution.repository.LanguageRepository;
 import com.codex.platform.problem.repository.ProblemRepository;
 import com.codex.platform.queue.service.QueueService;
+import com.codex.platform.submission.service.SubmissionCacheService;
 import com.codex.platform.submission.dto.SubmitCodeRequest;
 import com.codex.platform.submission.dto.SubmitCodeResponse;
 import com.codex.platform.submission.dto.SubmissionResponse;
@@ -41,6 +42,7 @@ public class SubmissionService {
     private final LanguageRepository languageRepository;
     private final QueueService queueService;
     private final RedissonClient redissonClient;
+    private final SubmissionCacheService submissionCacheService;
 
     @Transactional
     public SubmitCodeResponse submitCode(SubmitCodeRequest request, HttpServletRequest httpRequest) {
@@ -142,15 +144,33 @@ public class SubmissionService {
                 .status(submission.getStatus())
                 .createdAt(submission.getCreatedAt());
 
-        // Add result details if available
-        submissionResultRepository.findById(submissionId).ifPresent(result -> {
-            builder.executionTimeMs(result.getExecutionTimeMs())
-                    .memoryUsedMb(result.getMemoryUsedMb())
-                    .passedTestCases(result.getPassedTestCases())
-                    .totalTestCases(result.getTotalTestCases())
-                    .stdout(result.getStdout())
-                    .stderr(result.getStderr());
-        });
+        // ── Cache-aside: check Redis before hitting the DB ────────────────
+        // While async DB persist is in-flight the result lives only in Redis.
+        // Once the DB write completes the cache is evicted and we fall through
+        // to the DB query below.
+        submissionCacheService.getCachedResult(submissionId).ifPresentOrElse(
+                cached -> {
+                    // Prefer cached status (more up-to-date during async persist window)
+                    if (cached.getStatus() != null) builder.status(cached.getStatus());
+                    builder.executionTimeMs(cached.getExecutionTimeMs())
+                            .memoryUsedMb(cached.getMemoryUsedMb())
+                            .passedTestCases(cached.getPassedTestCases())
+                            .totalTestCases(cached.getTotalTestCases())
+                            .stdout(cached.getStdout())
+                            .stderr(cached.getStderr());
+                },
+                () -> {
+                    // Cache miss — result is already in DB (normal path after eviction)
+                    submissionResultRepository.findById(submissionId).ifPresent(result -> {
+                        builder.executionTimeMs(result.getExecutionTimeMs())
+                                .memoryUsedMb(result.getMemoryUsedMb())
+                                .passedTestCases(result.getPassedTestCases())
+                                .totalTestCases(result.getTotalTestCases())
+                                .stdout(result.getStdout())
+                                .stderr(result.getStderr());
+                    });
+                });
+        // ─────────────────────────────────────────────────────────────────
 
         return builder.build();
     }
