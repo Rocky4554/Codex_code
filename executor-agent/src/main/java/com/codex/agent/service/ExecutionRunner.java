@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Stateless orchestration of a single submission execution.
@@ -45,9 +47,28 @@ public class ExecutionRunner {
 
         try {
             // 1. Prepare workspace (write source file to host temp dir, will be bind-mounted)
+            //    For Java: extract the public class name so the filename matches (javac requirement)
+            String baseName = "solution";
+            String compileCmd = request.getCompileCommand();
+            String executeCmd = request.getExecuteCommand();
+
+            if (".java".equals(request.getFileExtension())) {
+                String className = extractJavaPublicClassName(request.getSourceCode());
+                if (className != null) {
+                    baseName = className;
+                    // Rewrite compile/execute commands to use the actual class name
+                    if (compileCmd != null) {
+                        compileCmd = compileCmd.replace("solution.java", className + ".java");
+                    }
+                    executeCmd = executeCmd.replace("solution", className);
+                    log.info("Submission {}: Java public class detected '{}', file={}.java",
+                            request.getSubmissionId(), className, className);
+                }
+            }
+
             tempDir = dockerExecutor.prepareTempDirectory(
                     request.getSourceCode(),
-                    "solution" + request.getFileExtension());
+                    baseName + request.getFileExtension());
 
             // 2. Create and start ONE container
             containerId = dockerExecutor.createAndStartContainer(
@@ -58,7 +79,7 @@ public class ExecutionRunner {
             // 3. Compile (or skip for interpreted languages)
             ExecutionResult compileError = dockerExecutor.compileInContainer(
                     containerId,
-                    request.getCompileCommand(),
+                    compileCmd,
                     request.getCompileTimeoutMs());
 
             if (compileError != null) {
@@ -109,7 +130,7 @@ public class ExecutionRunner {
                     try {
                         result = dockerExecutor.runTestCase(
                                 containerId,
-                                request.getExecuteCommand(),
+                                executeCmd,
                                 testCase.getStdin(),
                                 request.getRunTimeoutMs(),
                                 tempDir);
@@ -205,5 +226,18 @@ public class ExecutionRunner {
                 .stderr(stderrBuilder.toString())
                 .results(testResults)
                 .build();
+    }
+
+    private static final Pattern JAVA_PUBLIC_CLASS = Pattern.compile(
+            "public\\s+class\\s+(\\w+)");
+
+    /**
+     * Extracts the public class name from Java source code.
+     * Returns null if no public class declaration is found.
+     */
+    private String extractJavaPublicClassName(String sourceCode) {
+        if (sourceCode == null) return null;
+        Matcher m = JAVA_PUBLIC_CLASS.matcher(sourceCode);
+        return m.find() ? m.group(1) : null;
     }
 }
