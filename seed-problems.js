@@ -121,7 +121,7 @@ const problems = [
     }
 ];
 
-const DEFAULT_BACKEND_URL = 'https://codex-backend-demo.onrender.com';
+const DEFAULT_BACKEND_URL = 'https://codex-code-1.onrender.com';
 
 async function seedProblems() {
     const baseUrl = process.argv[2] || DEFAULT_BACKEND_URL;
