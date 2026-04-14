@@ -29,11 +29,14 @@ public class QueueService {
     }
 
     /**
-     * Dequeue a submission (blocking operation)
+     * Dequeue a submission (blocking with timeout).
+     * Uses a short timeout instead of infinite take() so the worker
+     * survives Upstash DNS rotations without entering error backoff.
+     * Returns null if no item is available within the timeout.
      */
     public UUID dequeue() throws InterruptedException {
         RBlockingQueue<UUID> queue = redissonClient.getBlockingQueue(QUEUE_NAME);
-        return queue.take(); // Blocks until an item is available
+        return queue.poll(10, TimeUnit.SECONDS);
     }
 
     /**

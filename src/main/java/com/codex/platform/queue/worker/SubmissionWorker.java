@@ -43,9 +43,13 @@ public class SubmissionWorker {
                     UUID submissionId = null;
 
                     try {
-                        // Dequeue submission (blocking operation)
+                        // Dequeue submission (blocks up to 10s, then returns null)
                         submissionId = queueService.dequeue();
-                        consecutiveErrors = 0; // reset on successful dequeue
+                        if (submissionId == null) {
+                            consecutiveErrors = 0;
+                            continue; // No item in queue, loop back immediately
+                        }
+                        consecutiveErrors = 0;
                         log.info("Worker-{} dequeued submission: {}", workerId, submissionId);
 
                         // Acquire Redis lock

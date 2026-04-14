@@ -37,7 +37,12 @@ public class RedissonConfig {
                 .setUsername(username)
                 .setPassword(password)
                 .setConnectionPoolSize(connectionPoolSize)
-                .setConnectionMinimumIdleSize(connectionMinimumIdleSize);
+                .setConnectionMinimumIdleSize(connectionMinimumIdleSize)
+                .setRetryAttempts(3)
+                .setRetryInterval(1500)
+                .setTimeout(10_000)
+                .setConnectTimeout(10_000)
+                .setDnsMonitoringInterval(60_000); // Upstash rotates DNS frequently; reduce churn
 
         // Tell Redisson to use the default Java DNS resolver instead of Netty's
         // built-in resolver
