@@ -1,0 +1,580 @@
+{
+  "communities": {
+    "0": [
+      "dockerexecutor_dockerexecutor",
+      "dockerexecutor_dockerexecutor_cleanup",
+      "dockerexecutor_dockerexecutor_compileincontainer",
+      "dockerexecutor_dockerexecutor_createandstartcontainer",
+      "dockerexecutor_dockerexecutor_createtempdirectory",
+      "dockerexecutor_dockerexecutor_deletedirectory",
+      "dockerexecutor_dockerexecutor_ensureimageexists",
+      "dockerexecutor_dockerexecutor_executecommandincontainer",
+      "dockerexecutor_dockerexecutor_loadseccompprofile",
+      "dockerexecutor_dockerexecutor_preparetempdirectory",
+      "dockerexecutor_dockerexecutor_runtestcase",
+      "executor_agent_src_main_java_com_codex_agent_execution_dockerexecutor_java",
+      "src_main_java_com_codex_platform_execution_service_dockerexecutor_java"
+    ],
+    "1": [
+      "src_main_java_com_codex_platform_problem_controller_testcasecontroller_java",
+      "testcasecontroller_testcasecontroller",
+      "testcasecontroller_testcasecontroller_createtestcase",
+      "testcasecontroller_testcasecontroller_createtestcases",
+      "testcasecontroller_testcasecontroller_deletetestcase",
+      "testcasecontroller_testcasecontroller_deletetestcasesbyproblemid",
+      "testcasecontroller_testcasecontroller_getsampletestcasesbyproblemid",
+      "testcasecontroller_testcasecontroller_gettestcasebyid",
+      "testcasecontroller_testcasecontroller_gettestcasesbyproblemid",
+      "testcasecontroller_testcasecontroller_updatetestcase"
+    ],
+    "2": [
+      "jwtutil_jwtutil",
+      "jwtutil_jwtutil_extractclaims",
+      "jwtutil_jwtutil_extractuserid",
+      "jwtutil_jwtutil_extractusername",
+      "jwtutil_jwtutil_generatetoken",
+      "jwtutil_jwtutil_getsigningkey",
+      "jwtutil_jwtutil_validatesecret",
+      "jwtutil_jwtutil_validatetoken",
+      "src_main_java_com_codex_platform_auth_util_jwtutil_java"
+    ],
+    "3": [
+      "executionservice_executionservice",
+      "executionservice_executionservice_executelocal",
+      "executionservice_executionservice_executeremote",
+      "executionservice_executionservice_executesubmission",
+      "executionservice_executionservice_getcumulativeexecutiontimems",
+      "executionservice_executionservice_getfailedexecutions",
+      "executionservice_executionservice_getsuccessfulexecutions",
+      "executionservice_executionservice_gettotalsubmissions",
+      "src_main_java_com_codex_platform_execution_service_executionservice_java"
+    ],
+    "4": [
+      "src_main_java_com_codex_platform_problem_service_testcaseservice_java",
+      "testcaseservice_testcaseservice",
+      "testcaseservice_testcaseservice_createtestcase",
+      "testcaseservice_testcaseservice_deletetestcase",
+      "testcaseservice_testcaseservice_deletetestcasesbyproblemid",
+      "testcaseservice_testcaseservice_getsampletestcasesbyproblemid",
+      "testcaseservice_testcaseservice_gettestcasebyid",
+      "testcaseservice_testcaseservice_gettestcasesbyproblemid",
+      "testcaseservice_testcaseservice_updatetestcase"
+    ],
+    "5": [
+      "executecontroller_executecontroller",
+      "executecontroller_executecontroller_execute",
+      "executecontroller_executecontroller_getcached",
+      "executecontroller_executecontroller_healthz",
+      "executecontroller_executecontroller_limiter",
+      "executecontroller_executecontroller_putcache",
+      "executecontroller_executecontroller_version",
+      "executecontroller_removeeldestentry",
+      "executor_agent_src_main_java_com_codex_agent_controller_executecontroller_java"
+    ],
+    "6": [
+      "executoragentclient_executoragentclient",
+      "executoragentclient_executoragentclient_doexecute",
+      "executoragentclient_executoragentclient_execute",
+      "executoragentclient_executoragentclient_executoragentclient",
+      "executoragentclient_executoragentclient_init",
+      "executoragentclient_executoragentexception",
+      "executoragentclient_executoragentexception_executoragentexception",
+      "src_main_java_com_codex_platform_execution_client_executoragentclient_java"
+    ],
+    "7": [
+      "problemservice_problemservice",
+      "problemservice_problemservice_applyrequest",
+      "problemservice_problemservice_createproblem",
+      "problemservice_problemservice_deleteproblem",
+      "problemservice_problemservice_getallproblems",
+      "problemservice_problemservice_getproblembyid",
+      "problemservice_problemservice_updateproblem",
+      "src_main_java_com_codex_platform_problem_service_problemservice_java"
+    ],
+    "8": [
+      "queueservice_queueservice",
+      "queueservice_queueservice_acquirelock",
+      "queueservice_queueservice_dequeue",
+      "queueservice_queueservice_enqueue",
+      "queueservice_queueservice_getqueuedepth",
+      "queueservice_queueservice_queue",
+      "queueservice_queueservice_releaselock",
+      "src_main_java_com_codex_platform_queue_service_queueservice_java"
+    ],
+    "9": [
+      "globalexceptionhandler_globalexceptionhandler",
+      "globalexceptionhandler_globalexceptionhandler_handleaccessdenied",
+      "globalexceptionhandler_globalexceptionhandler_handlegenericexception",
+      "globalexceptionhandler_globalexceptionhandler_handleillegalargument",
+      "globalexceptionhandler_globalexceptionhandler_handleillegalstate",
+      "globalexceptionhandler_globalexceptionhandler_handlevalidationexceptions",
+      "src_main_java_com_codex_platform_common_exception_globalexceptionhandler_java"
+    ],
+    "10": [
+      "languageservice_languageservice",
+      "languageservice_languageservice_applyrequest",
+      "languageservice_languageservice_createlanguage",
+      "languageservice_languageservice_deletelanguage",
+      "languageservice_languageservice_getalllanguages",
+      "languageservice_languageservice_updatelanguage",
+      "src_main_java_com_codex_platform_execution_service_languageservice_java"
+    ],
+    "11": [
+      "problemcontroller_problemcontroller",
+      "problemcontroller_problemcontroller_createproblem",
+      "problemcontroller_problemcontroller_deleteproblem",
+      "problemcontroller_problemcontroller_getallproblems",
+      "problemcontroller_problemcontroller_getproblembyid",
+      "problemcontroller_problemcontroller_updateproblem",
+      "src_main_java_com_codex_platform_problem_controller_problemcontroller_java"
+    ],
+    "12": [
+      "datainitializer_datainitializer",
+      "datainitializer_datainitializer_initializelanguages",
+      "datainitializer_datainitializer_initializesampleproblems",
+      "datainitializer_datainitializer_run",
+      "datainitializer_datainitializer_synchronizetimelimits",
+      "src_main_java_com_codex_platform_config_datainitializer_java"
+    ],
+    "13": [
+      "languagecontroller_languagecontroller",
+      "languagecontroller_languagecontroller_createlanguage",
+      "languagecontroller_languagecontroller_deletelanguage",
+      "languagecontroller_languagecontroller_getalllanguages",
+      "languagecontroller_languagecontroller_updatelanguage",
+      "src_main_java_com_codex_platform_execution_controller_languagecontroller_java"
+    ],
+    "14": [
+      "src_main_java_com_codex_platform_realtime_service_sseservice_java",
+      "sseservice_sseservice",
+      "sseservice_sseservice_isterminalstatus",
+      "sseservice_sseservice_registeremitter",
+      "sseservice_sseservice_removeemitter",
+      "sseservice_sseservice_sendevent"
+    ],
+    "15": [
+      "src_main_java_com_codex_platform_submission_service_submissioncacheservice_java",
+      "submissioncacheservice_submissioncacheservice",
+      "submissioncacheservice_submissioncacheservice_cacheresult",
+      "submissioncacheservice_submissioncacheservice_cachestatus",
+      "submissioncacheservice_submissioncacheservice_evict",
+      "submissioncacheservice_submissioncacheservice_getcachedresult"
+    ],
+    "16": [
+      "src_main_java_com_codex_platform_submission_service_submissionservice_java",
+      "submissionservice_submissionservice",
+      "submissionservice_submissionservice_getsubmission",
+      "submissionservice_submissionservice_listmysubmissions",
+      "submissionservice_submissionservice_submitcode",
+      "submissionservice_submissionservice_validatesubmissionownership"
+    ],
+    "17": [
+      "src_main_java_com_codex_platform_user_repository_userrepository_java",
+      "userrepository_userrepository",
+      "userrepository_userrepository_existsbyemail",
+      "userrepository_userrepository_existsbyusername",
+      "userrepository_userrepository_findbyemail",
+      "userrepository_userrepository_findbyusername"
+    ],
+    "18": [
+      "executor_agent_src_main_java_com_codex_agent_execution_outputnormalizer_java",
+      "outputnormalizer_outputnormalizer",
+      "outputnormalizer_outputnormalizer_areequal",
+      "outputnormalizer_outputnormalizer_normalize",
+      "src_main_java_com_codex_platform_common_util_outputnormalizer_java"
+    ],
+    "19": [
+      "securityconfig_securityconfig",
+      "securityconfig_securityconfig_corsconfigurationsource",
+      "securityconfig_securityconfig_passwordencoder",
+      "securityconfig_securityconfig_securityfilterchain",
+      "src_main_java_com_codex_platform_config_securityconfig_java"
+    ],
+    "20": [
+      "languagerepository_languagerepository",
+      "languagerepository_languagerepository_existsbynameignorecase",
+      "languagerepository_languagerepository_existsbynameignorecaseandidnot",
+      "languagerepository_languagerepository_findbyname",
+      "src_main_java_com_codex_platform_execution_repository_languagerepository_java"
+    ],
+    "21": [
+      "src_main_java_com_codex_platform_submission_controller_submissioncontroller_java",
+      "submissioncontroller_submissioncontroller",
+      "submissioncontroller_submissioncontroller_getsubmission",
+      "submissioncontroller_submissioncontroller_listmysubmissions",
+      "submissioncontroller_submissioncontroller_submitcode"
+    ],
+    "22": [
+      "src_main_java_com_codex_platform_submission_repository_submissionrepository_java",
+      "submissionrepository_submissionrepository",
+      "submissionrepository_submissionrepository_findbyproblemid",
+      "submissionrepository_submissionrepository_findbyuserid",
+      "submissionrepository_submissionrepository_findbyuseridandproblemid"
+    ],
+    "23": [
+      "resultprocessor_resultprocessor",
+      "resultprocessor_resultprocessor_markasattempted",
+      "resultprocessor_resultprocessor_saveresult",
+      "resultprocessor_resultprocessor_updateuserproblemstatus",
+      "src_main_java_com_codex_platform_submission_service_resultprocessor_java"
+    ],
+    "24": [
+      "src_main_java_com_codex_platform_user_controller_usercontroller_java",
+      "usercontroller_usercontroller",
+      "usercontroller_usercontroller_getmyproblems",
+      "usercontroller_usercontroller_getmysubmissions",
+      "usercontroller_usercontroller_getprofile"
+    ],
+    "25": [
+      "authcontroller_authcontroller",
+      "authcontroller_authcontroller_login",
+      "authcontroller_authcontroller_register",
+      "src_main_java_com_codex_platform_auth_controller_authcontroller_java"
+    ],
+    "26": [
+      "jwtauthenticationfilter_jwtauthenticationfilter",
+      "jwtauthenticationfilter_jwtauthenticationfilter_dofilterinternal",
+      "jwtauthenticationfilter_jwtauthenticationfilter_getcurrentuserid",
+      "src_main_java_com_codex_platform_auth_filter_jwtauthenticationfilter_java"
+    ],
+    "27": [
+      "authservice_authservice",
+      "authservice_authservice_login",
+      "authservice_authservice_register",
+      "src_main_java_com_codex_platform_auth_service_authservice_java"
+    ],
+    "28": [
+      "dockerconfig_dockerconfig",
+      "dockerconfig_dockerconfig_dockerclient",
+      "executor_agent_src_main_java_com_codex_agent_config_dockerconfig_java",
+      "src_main_java_com_codex_platform_config_dockerconfig_java"
+    ],
+    "29": [
+      "executeresponse_executeresponse",
+      "executeresponse_testresult",
+      "executor_agent_src_main_java_com_codex_agent_dto_executeresponse_java",
+      "src_main_java_com_codex_platform_execution_client_dto_executeresponse_java"
+    ],
+    "30": [
+      "src_main_java_com_codex_platform_problem_repository_testcaserepository_java",
+      "testcaserepository_testcaserepository",
+      "testcaserepository_testcaserepository_findbyproblemid",
+      "testcaserepository_testcaserepository_findbyproblemidandissample"
+    ],
+    "31": [
+      "src_main_java_com_codex_platform_queue_worker_submissionworker_java",
+      "submissionworker_submissionworker",
+      "submissionworker_submissionworker_start",
+      "submissionworker_submissionworker_stop"
+    ],
+    "32": [
+      "src_main_java_com_codex_platform_realtime_controller_ssecontroller_java",
+      "ssecontroller_ssecontroller",
+      "ssecontroller_ssecontroller_isterminalstatus",
+      "ssecontroller_ssecontroller_streamevents"
+    ],
+    "33": [
+      "src_main_java_com_codex_platform_user_repository_userproblemstatusrepository_java",
+      "userproblemstatusrepository_userproblemstatusrepository",
+      "userproblemstatusrepository_userproblemstatusrepository_findbyuserid",
+      "userproblemstatusrepository_userproblemstatusrepository_findbyuseridandproblemid"
+    ],
+    "34": [
+      "executerequest_executerequest",
+      "executerequest_testcase",
+      "executor_agent_src_main_java_com_codex_agent_dto_executerequest_java",
+      "src_main_java_com_codex_platform_execution_client_dto_executerequest_java"
+    ],
+    "35": [
+      "executor_agent_src_main_java_com_codex_agent_scheduled_tempdirjanitor_java",
+      "tempdirjanitor_tempdirjanitor",
+      "tempdirjanitor_tempdirjanitor_deleterecursive",
+      "tempdirjanitor_tempdirjanitor_sweep"
+    ],
+    "36": [
+      "bearertokenfilter_bearertokenfilter",
+      "bearertokenfilter_bearertokenfilter_constanttimeequals",
+      "bearertokenfilter_bearertokenfilter_dofilterinternal",
+      "executor_agent_src_main_java_com_codex_agent_security_bearertokenfilter_java"
+    ],
+    "37": [
+      "executionrunner_executionrunner",
+      "executionrunner_executionrunner_extractjavapublicclassname",
+      "executionrunner_executionrunner_run",
+      "executor_agent_src_main_java_com_codex_agent_service_executionrunner_java"
+    ],
+    "38": [
+      "codexplatformapplication_codexplatformapplication",
+      "codexplatformapplication_codexplatformapplication_main",
+      "src_main_java_com_codex_platform_codexplatformapplication_java"
+    ],
+    "39": [
+      "asyncconfig_asyncconfig",
+      "asyncconfig_asyncconfig_submissionpersistexecutor",
+      "src_main_java_com_codex_platform_config_asyncconfig_java"
+    ],
+    "40": [
+      "redissonconfig_redissonconfig",
+      "redissonconfig_redissonconfig_redissonclient",
+      "src_main_java_com_codex_platform_config_redissonconfig_java"
+    ],
+    "41": [
+      "executionresult_executionresult",
+      "executor_agent_src_main_java_com_codex_agent_execution_executionresult_java",
+      "src_main_java_com_codex_platform_execution_dto_executionresult_java"
+    ],
+    "42": [
+      "healthcontroller_healthcontroller",
+      "healthcontroller_healthcontroller_health",
+      "src_main_java_com_codex_platform_monitoring_controller_healthcontroller_java"
+    ],
+    "43": [
+      "monitoringcontroller_monitoringcontroller",
+      "monitoringcontroller_monitoringcontroller_getstats",
+      "src_main_java_com_codex_platform_monitoring_controller_monitoringcontroller_java"
+    ],
+    "44": [
+      "rootcontroller_rootcontroller",
+      "rootcontroller_rootcontroller_root",
+      "src_main_java_com_codex_platform_monitoring_controller_rootcontroller_java"
+    ],
+    "45": [
+      "monitoringservice_monitoringservice",
+      "monitoringservice_monitoringservice_getplatformstats",
+      "src_main_java_com_codex_platform_monitoring_service_monitoringservice_java"
+    ],
+    "46": [
+      "asyncresultpersister_asyncresultpersister",
+      "asyncresultpersister_asyncresultpersister_saveasync",
+      "src_main_java_com_codex_platform_submission_service_asyncresultpersister_java"
+    ],
+    "47": [
+      "src_main_java_com_codex_platform_user_entity_userproblemstatus_java",
+      "userproblemstatus_userproblemstatus",
+      "userproblemstatus_userproblemstatusid"
+    ],
+    "48": [
+      "agentapplication_agentapplication",
+      "agentapplication_agentapplication_main",
+      "executor_agent_src_main_java_com_codex_agent_agentapplication_java"
+    ],
+    "49": [
+      "authresponse_authresponse",
+      "src_main_java_com_codex_platform_auth_dto_authresponse_java"
+    ],
+    "50": [
+      "loginrequest_loginrequest",
+      "src_main_java_com_codex_platform_auth_dto_loginrequest_java"
+    ],
+    "51": [
+      "registerrequest_registerrequest",
+      "src_main_java_com_codex_platform_auth_dto_registerrequest_java"
+    ],
+    "52": [
+      "errorresponse_errorresponse",
+      "src_main_java_com_codex_platform_common_exception_errorresponse_java"
+    ],
+    "53": [
+      "languagerequest_languagerequest",
+      "src_main_java_com_codex_platform_execution_dto_languagerequest_java"
+    ],
+    "54": [
+      "language_language",
+      "src_main_java_com_codex_platform_execution_entity_language_java"
+    ],
+    "55": [
+      "problemrequest_problemrequest",
+      "src_main_java_com_codex_platform_problem_dto_problemrequest_java"
+    ],
+    "56": [
+      "src_main_java_com_codex_platform_problem_dto_testcaserequest_java",
+      "testcaserequest_testcaserequest"
+    ],
+    "57": [
+      "problem_problem",
+      "src_main_java_com_codex_platform_problem_entity_problem_java"
+    ],
+    "58": [
+      "src_main_java_com_codex_platform_problem_entity_testcase_java",
+      "testcase_testcase"
+    ],
+    "59": [
+      "problemrepository_problemrepository",
+      "src_main_java_com_codex_platform_problem_repository_problemrepository_java"
+    ],
+    "60": [
+      "src_main_java_com_codex_platform_submission_dto_submissionresponse_java",
+      "submissionresponse_submissionresponse"
+    ],
+    "61": [
+      "src_main_java_com_codex_platform_submission_dto_submissionresultdto_java",
+      "submissionresultdto_submissionresultdto"
+    ],
+    "62": [
+      "src_main_java_com_codex_platform_submission_dto_submitcoderequest_java",
+      "submitcoderequest_submitcoderequest"
+    ],
+    "63": [
+      "src_main_java_com_codex_platform_submission_dto_submitcoderesponse_java",
+      "submitcoderesponse_submitcoderesponse"
+    ],
+    "64": [
+      "src_main_java_com_codex_platform_submission_entity_submission_java",
+      "submission_submission"
+    ],
+    "65": [
+      "src_main_java_com_codex_platform_submission_entity_submissionresult_java",
+      "submissionresult_submissionresult"
+    ],
+    "66": [
+      "src_main_java_com_codex_platform_submission_repository_submissionresultrepository_java",
+      "submissionresultrepository_submissionresultrepository"
+    ],
+    "67": [
+      "src_main_java_com_codex_platform_user_entity_user_java",
+      "user_user"
+    ],
+    "68": [
+      "src_main_java_com_codex_platform_common_enums_problemdifficulty_java"
+    ],
+    "69": [
+      "src_main_java_com_codex_platform_common_enums_submissionstatus_java"
+    ],
+    "70": [
+      "src_main_java_com_codex_platform_common_enums_userproblemstatusenum_java"
+    ]
+  },
+  "cohesion": {
+    "0": 0.22,
+    "1": 0.2,
+    "2": 0.36,
+    "3": 0.28,
+    "4": 0.22,
+    "5": 0.33,
+    "6": 0.29,
+    "7": 0.32,
+    "8": 0.36,
+    "9": 0.29,
+    "10": 0.38,
+    "11": 0.29,
+    "12": 0.53,
+    "13": 0.33,
+    "14": 0.53,
+    "15": 0.33,
+    "16": 0.33,
+    "17": 0.33,
+    "18": 0.5,
+    "19": 0.5,
+    "20": 0.4,
+    "21": 0.4,
+    "22": 0.4,
+    "23": 0.6,
+    "24": 0.4,
+    "25": 0.5,
+    "26": 0.5,
+    "27": 0.5,
+    "28": 0.5,
+    "29": 0.67,
+    "30": 0.5,
+    "31": 0.5,
+    "32": 0.67,
+    "33": 0.5,
+    "34": 0.67,
+    "35": 0.67,
+    "36": 0.67,
+    "37": 0.67,
+    "38": 0.67,
+    "39": 0.67,
+    "40": 0.67,
+    "41": 0.67,
+    "42": 0.67,
+    "43": 0.67,
+    "44": 0.67,
+    "45": 0.67,
+    "46": 0.67,
+    "47": 0.67,
+    "48": 0.67,
+    "49": 1.0,
+    "50": 1.0,
+    "51": 1.0,
+    "52": 1.0,
+    "53": 1.0,
+    "54": 1.0,
+    "55": 1.0,
+    "56": 1.0,
+    "57": 1.0,
+    "58": 1.0,
+    "59": 1.0,
+    "60": 1.0,
+    "61": 1.0,
+    "62": 1.0,
+    "63": 1.0,
+    "64": 1.0,
+    "65": 1.0,
+    "66": 1.0,
+    "67": 1.0,
+    "68": 1.0,
+    "69": 1.0,
+    "70": 1.0
+  },
+  "gods": [
+    {
+      "id": "dockerexecutor_dockerexecutor",
+      "label": "DockerExecutor",
+      "edges": 12
+    },
+    {
+      "id": "testcasecontroller_testcasecontroller",
+      "label": "TestCaseController",
+      "edges": 9
+    },
+    {
+      "id": "jwtutil_jwtutil",
+      "label": "JwtUtil",
+      "edges": 8
+    },
+    {
+      "id": "executionservice_executionservice",
+      "label": "ExecutionService",
+      "edges": 8
+    },
+    {
+      "id": "testcaseservice_testcaseservice",
+      "label": "TestCaseService",
+      "edges": 8
+    },
+    {
+      "id": "problemservice_problemservice",
+      "label": "ProblemService",
+      "edges": 7
+    },
+    {
+      "id": "queueservice_queueservice",
+      "label": "QueueService",
+      "edges": 7
+    },
+    {
+      "id": "executecontroller_executecontroller",
+      "label": "ExecuteController",
+      "edges": 7
+    },
+    {
+      "id": "globalexceptionhandler_globalexceptionhandler",
+      "label": "GlobalExceptionHandler",
+      "edges": 6
+    },
+    {
+      "id": "languageservice_languageservice",
+      "label": "LanguageService",
+      "edges": 6
+    }
+  ],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `AuthResponse`, `LoginRequest`, `RegisterRequest` to the rest of the system?",
+      "why": "21 weakly-connected nodes found - possible documentation gaps or missing edges."
+    }
+  ]
+}
