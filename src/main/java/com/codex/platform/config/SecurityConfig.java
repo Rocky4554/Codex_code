@@ -17,6 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
+import jakarta.servlet.DispatcherType;
 
 import java.util.Arrays;
 
@@ -41,6 +42,8 @@ public class SecurityConfig {
                         .frameOptions(frame -> frame.deny())
                         .contentTypeOptions(Customizer.withDefaults()))
                 .authorizeHttpRequests(auth -> auth
+                        // Async SSE dispatches re-enter filter chain with no auth context — permit them
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         // Public endpoints
                         .requestMatchers("/", "/api/health", "/error").permitAll()
                         .requestMatchers("/actuator/**").permitAll()

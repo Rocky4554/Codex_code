@@ -36,22 +36,15 @@ public class SubmissionWorker {
             Thread workerThread = new Thread(() -> {
                 log.info("Submission worker-{} started", workerId);
 
-                int emptyPollCount = 0;
-
                 while (!Thread.currentThread().isInterrupted()) {
                     RLock lock = null;
                     UUID submissionId = null;
 
                     try {
-                        // Non-blocking LPOP with adaptive backoff
-                        submissionId = queueService.dequeue(emptyPollCount);
-                        if (submissionId == null) {
-                            emptyPollCount++;
-                            continue;
-                        }
+                        // BLPOP — blocks up to 5s server-side, returns null on timeout
+                        submissionId = queueService.dequeue();
+                        if (submissionId == null) continue;
 
-                        // Got a job — reset idle counter
-                        emptyPollCount = 0;
                         log.info("Worker-{} dequeued: {}", workerId, submissionId);
 
                         // Acquire distributed lock to prevent duplicate processing
