@@ -830,3 +830,54 @@ org.springframework.security.access.AccessDeniedException: Access Denied
 2026-04-16T12:43:31.663Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.queue.worker.SubmissionWorker      : Worker-1 finished execution for 16fc1328-9373-4dd1-b292-5acec7853c63
 2026-04-16T12:43:31.774Z  INFO 14992 --- [codex-platform] [sub-persist-1] c.c.p.s.service.AsyncResultPersister     : Async DB persist succeeded for submission: 16fc1328-9373-4dd1-b292-5acec7853c63
 2026-04-16T12:43:31.803Z DEBUG 14992 --- [codex-platform] [sub-persist-1] c.c.p.s.service.SubmissionCacheService   : Evicted cache for submission 16fc1328-9373-4dd1-b292-5acec7853c63
+2026-04-16T13:47:33.003Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.platform.queue.service.QueueService  : Queue hit: 58de26a0-e546-446f-b20e-4452c076a730 dequeued
+2026-04-16T13:47:33.053Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.queue.worker.SubmissionWorker      : Worker-1 dequeued: 58de26a0-e546-446f-b20e-4452c076a730
+2026-04-16T13:47:33.086Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.platform.queue.service.QueueService  : Acquired lock for submission: 58de26a0-e546-446f-b20e-4452c076a730
+2026-04-16T13:47:33.088Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.queue.worker.SubmissionWorker      : Worker-1 starting execution for 58de26a0-e546-446f-b20e-4452c076a730
+2026-04-16T13:47:33.125Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : Starting execution for submission: 58de26a0-e546-446f-b20e-4452c076a730 (mode=remote)
+2026-04-16T13:47:33.162Z DEBUG 14992 --- [codex-platform] [submission-worker-1] c.c.p.realtime.service.SseService        : No SSE subscribers for submission 58de26a0-e546-446f-b20e-4452c076a730, skipping event dispatch
+2026-04-16T13:47:33.247Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : Submission 58de26a0-e546-446f-b20e-4452c076a730 marked RUNNING and SSE event fired
+2026-04-16T13:47:33.426Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : Executing submission 58de26a0-e546-446f-b20e-4452c076a730 against 1 test case(s) via remote mode
+2026-04-16T13:47:33.432Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : Dispatching submission 58de26a0-e546-446f-b20e-4452c076a730 to remote executor at 58de26a0-e546-446f-b20e-4452c076a730
+2026-04-16T13:47:53.420Z  WARN 14992 --- [codex-platform] [HikariCodexPool housekeeper] com.zaxxer.hikari.pool.ProxyLeakTask     : Connection leak detection triggered for org.postgresql.jdbc.PgConnection@66218fb5 on thread submission-worker-1, stack trace follows
+
+java.lang.Exception: Apparent connection leak detected
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:128)
+	at org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl.getConnection(DatasourceConnectionProviderImpl.java:122)
+	at org.hibernate.internal.NonContextualJdbcConnectionAccess.obtainConnection(NonContextualJdbcConnectionAccess.java:46)
+	at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.acquireConnectionIfNeeded(LogicalConnectionManagedImpl.java:113)
+	at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getPhysicalConnection(LogicalConnectionManagedImpl.java:143)
+	at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.getConnectionForTransactionManagement(LogicalConnectionManagedImpl.java:273)
+	at org.hibernate.resource.jdbc.internal.LogicalConnectionManagedImpl.begin(LogicalConnectionManagedImpl.java:281)
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.begin(JdbcResourceLocalTransactionCoordinatorImpl.java:232)
+	at org.hibernate.engine.transaction.internal.TransactionImpl.begin(TransactionImpl.java:83)
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.beginTransaction(HibernateJpaDialect.java:176)
+	at org.springframework.orm.jpa.JpaTransactionManager.doBegin(JpaTransactionManager.java:420)
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.startTransaction(AbstractPlatformTransactionManager.java:531)
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.getTransaction(AbstractPlatformTransactionManager.java:405)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.createTransactionIfNecessary(TransactionAspectSupport.java:610)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:379)
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:717)
+	at com.codex.platform.execution.service.ExecutionService$$SpringCGLIB$$0.executeSubmission(<generated>)
+	at com.codex.platform.queue.worker.SubmissionWorker.lambda$0(SubmissionWorker.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2026-04-16T13:48:34.121Z DEBUG 14992 --- [codex-platform] [submission-worker-1] c.c.p.s.service.SubmissionCacheService   : Cached result for submission 58de26a0-e546-446f-b20e-4452c076a730 (TTL=3600s)
+2026-04-16T13:48:34.123Z DEBUG 14992 --- [codex-platform] [submission-worker-1] c.c.p.realtime.service.SseService        : No SSE subscribers for submission 58de26a0-e546-446f-b20e-4452c076a730, skipping event dispatch
+2026-04-16T13:48:34.125Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : ╔══════════════════════════════════════════════════
+2026-04-16T13:48:34.125Z  INFO 14992 --- [codex-platform] [sub-persist-2] c.c.p.s.service.AsyncResultPersister     : Async DB persist starting for submission: 58de26a0-e546-446f-b20e-4452c076a730 status=COMPILATION_ERROR
+2026-04-16T13:48:34.127Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : ║ Submission  : 58de26a0-e546-446f-b20e-4452c076a730
+2026-04-16T13:48:34.128Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : ║ Verdict     : COMPILATION_ERROR (remote)
+2026-04-16T13:48:34.131Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : ║ Test Cases  : 0/1 passed
+2026-04-16T13:48:34.132Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : ║ Compile     : 60026ms
+2026-04-16T13:48:34.136Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : ║ Run total   : 0ms (limit: 5000ms)
+2026-04-16T13:48:34.139Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.e.service.ExecutionService         : ╚══════════════════════════════════════════════════
+2026-04-16T13:48:34.227Z  INFO 14992 --- [codex-platform] [submission-worker-1] com.zaxxer.hikari.pool.ProxyLeakTask     : Previously reported leaked connection org.postgresql.jdbc.PgConnection@66218fb5 on thread submission-worker-1 was returned to the pool (unleaked)
+2026-04-16T13:48:34.228Z  INFO 14992 --- [codex-platform] [submission-worker-1] c.c.p.queue.worker.SubmissionWorker      : Worker-1 finished execution for 58de26a0-e546-446f-b20e-4452c076a730
+2026-04-16T13:48:34.357Z  INFO 14992 --- [codex-platform] [sub-persist-2] c.c.p.s.service.ResultProcessor          : Marked problem as ATTEMPTED for user: 4f1fa2cc-ffb6-4e0d-bb99-78e47e93b710 problem: 66b6aa84-20fe-486d-85ef-8b7f412a2d1e
+2026-04-16T13:48:34.358Z  INFO 14992 --- [codex-platform] [sub-persist-2] c.c.p.s.service.ResultProcessor          : Successfully saved result for submission: 58de26a0-e546-446f-b20e-4452c076a730
+2026-04-16T13:48:34.519Z  INFO 14992 --- [codex-platform] [sub-persist-2] c.c.p.s.service.AsyncResultPersister     : Async DB persist succeeded for submission: 58de26a0-e546-446f-b20e-4452c076a730
+2026-04-16T13:48:34.552Z DEBUG 14992 --- [codex-platform] [sub-persist-2] c.c.p.s.service.SubmissionCacheService   : Evicted cache for submission 58de26a0-e546-446f-b20e-4452c076a730

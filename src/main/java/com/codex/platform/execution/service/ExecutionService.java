@@ -281,7 +281,7 @@ public class ExecutionService {
                 .executeCommand(language.getExecuteCommand())
                 .fileExtension(language.getFileExtension())
                 .sourceCode(submission.getSourceCode())
-                .compileTimeoutMs(60_000)
+                .compileTimeoutMs(180_000)
                 .runTimeoutMs(problem.getTimeLimitMs())
                 .memoryLimitMb(problem.getMemoryLimitMb())
                 .testCases(wireTestCases)
