@@ -71,10 +71,12 @@ public class ExecutionRunner {
                     baseName + request.getFileExtension());
 
             // 2. Create and start ONE container
+            // Use at least 512MB for container (compile phase needs it); problem limit enforced at exec level
+            int containerMemMb = Math.max(512, request.getMemoryLimitMb());
             containerId = dockerExecutor.createAndStartContainer(
                     request.getDockerImage(),
                     tempDir,
-                    request.getMemoryLimitMb());
+                    containerMemMb);
 
             // 3. Compile (or skip for interpreted languages)
             ExecutionResult compileError = dockerExecutor.compileInContainer(
