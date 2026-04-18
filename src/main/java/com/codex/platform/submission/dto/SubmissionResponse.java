@@ -28,4 +28,5 @@ public class SubmissionResponse {
     private Integer totalTestCases;
     private String stdout;
     private String stderr;
+    private String sourceCode;
 }

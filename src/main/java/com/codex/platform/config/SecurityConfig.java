@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/languages").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/api/languages").permitAll()
                         // Protected endpoints
+                        .requestMatchers("/api/run").authenticated()
                         .requestMatchers("/api/submissions/**").authenticated()
                         .requestMatchers("/api/user/**").authenticated()
 

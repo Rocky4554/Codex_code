@@ -142,7 +142,8 @@ public class SubmissionService {
                 .problemId(submission.getProblemId())
                 .languageId(submission.getLanguageId())
                 .status(submission.getStatus())
-                .createdAt(submission.getCreatedAt());
+                .createdAt(submission.getCreatedAt())
+                .sourceCode(submission.getSourceCode());
 
         // ── Cache-aside: check Redis before hitting the DB ────────────────
         // While async DB persist is in-flight the result lives only in Redis.
@@ -196,7 +197,8 @@ public class SubmissionService {
                             .problemId(submission.getProblemId())
                             .languageId(submission.getLanguageId())
                             .status(submission.getStatus())
-                            .createdAt(submission.getCreatedAt());
+                            .createdAt(submission.getCreatedAt())
+                            .sourceCode(submission.getSourceCode());
 
                     submissionResultRepository.findById(submission.getId()).ifPresent(result -> {
                         builder.executionTimeMs(result.getExecutionTimeMs())
