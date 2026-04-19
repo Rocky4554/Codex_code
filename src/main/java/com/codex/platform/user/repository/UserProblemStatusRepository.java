@@ -1,5 +1,6 @@
 package com.codex.platform.user.repository;
 
+import com.codex.platform.common.enums.UserProblemStatusEnum;
 import com.codex.platform.user.entity.UserProblemStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,4 +15,6 @@ public interface UserProblemStatusRepository
     Optional<UserProblemStatus> findByUserIdAndProblemId(UUID userId, UUID problemId);
 
     List<UserProblemStatus> findByUserId(UUID userId);
+
+    long countByUserIdAndStatus(UUID userId, UserProblemStatusEnum status);
 }

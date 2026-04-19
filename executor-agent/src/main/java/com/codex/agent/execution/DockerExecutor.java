@@ -119,7 +119,7 @@ public class DockerExecutor {
                     .withNetworkMode("none")
                     // ── Resource limits ────────────────────────────────────
                     .withMemory((long) memoryLimitMb * 1024 * 1024)
-                    .withMemorySwap((long) memoryLimitMb * 1024 * 1024)
+                    .withMemorySwap(-1L)
                     .withCpuQuota(50000L)        // 50% of one core
                     .withPidsLimit(50L)          // prevent fork bombs
                     // ── Filesystem ─────────────────────────────────────────

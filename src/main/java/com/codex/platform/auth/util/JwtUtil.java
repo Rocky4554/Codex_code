@@ -35,17 +35,23 @@ public class JwtUtil {
     /**
      * Generate JWT token with userId claim
      */
-    public String generateToken(UUID userId, String username) {
+    public String generateToken(UUID userId, String username, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .subject(username)
                 .claim("userId", userId.toString())
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    public String extractRole(String token) {
+        String role = extractClaims(token).get("role", String.class);
+        return role != null ? role : "USER";
     }
 
     /**

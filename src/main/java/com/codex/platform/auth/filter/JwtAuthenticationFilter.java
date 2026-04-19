@@ -38,12 +38,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtUtil.validateToken(token)) {
                     String username = jwtUtil.extractUsername(token);
                     UUID userId = jwtUtil.extractUserId(token);
+                    String role = jwtUtil.extractRole(token);
 
-                    // Store both username and userId so downstream code
-                    // can read userId from SecurityContext instead of re-parsing the JWT
                     Map<String, Object> principal = Map.of(
                             "username", username,
-                            "userId", userId);
+                            "userId", userId,
+                            "role", role);
 
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             principal,
@@ -75,5 +75,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return (UUID) principal.get("userId");
         }
         throw new IllegalStateException("No authenticated user in SecurityContext");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static String getCurrentUserRole() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Map) {
+            Map<String, Object> principal = (Map<String, Object>) auth.getPrincipal();
+            Object role = principal.get("role");
+            return role != null ? role.toString() : "USER";
+        }
+        return "USER";
     }
 }

@@ -38,9 +38,9 @@ public class AuthService {
         User savedUser = userRepository.save(user);
 
         // Generate JWT
-        String token = jwtUtil.generateToken(savedUser.getId(), savedUser.getUsername());
+        String token = jwtUtil.generateToken(savedUser.getId(), savedUser.getUsername(), savedUser.getRole());
 
-        return new AuthResponse(token, savedUser.getId(), savedUser.getUsername(), savedUser.getEmail());
+        return new AuthResponse(token, savedUser.getId(), savedUser.getUsername(), savedUser.getEmail(), savedUser.getRole());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -54,8 +54,8 @@ public class AuthService {
         }
 
         // Generate JWT
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
 
-        return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail());
+        return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail(), user.getRole());
     }
 }

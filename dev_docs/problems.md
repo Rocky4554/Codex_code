@@ -386,3 +386,133 @@ Response: [
 **Root Cause:** The `.env.production` file was created/edited on Windows and uploaded with CRLF line endings.
 **Solution:** Used `grep ... | cut -d= -f2- | tr -d "\r"` to strip carriage returns when reading values in bash scripts.
 **Permanent fix:** Run `dos2unix ~/Codex_code/.env.production` on EC2, or `sed -i 's/\r$//' ~/Codex_code/.env.production`.
+
+### 30. C++ Compilation OOM (cc1plus Killed) — Docker Swap & Memory Limits
+**Status:** Solved ✅
+**Date:** April 17, 2026
+
+**Problem:** C++ submissions with `#include <bits/stdc++.h>` consistently failed with:
+```
+Compilation Error: g++: fatal error: Killed signal terminated program cc1plus
+```
+**Symptom:** Simple hello-world or Two Sum in C++ would not compile, even though it works locally. The compiler process `cc1plus` was being killed by the kernel.
+
+**Root Cause Analysis (3-part bug):**
+
+1. **Docker Container Memory Limits Too Low:**
+   - Each submission container was created with `--memory` set to the problem's `memoryLimitMb` (default 256MB, sometimes as low as 128MB)
+   - The C++ compiler `g++` (specifically the `cc1plus` backend) needs **~300–400MB RAM** to parse and compile `bits/stdc++.h`
+   - With only 128MB available, cc1plus was immediately OOM-killed by the Docker memory cgroup
+
+2. **Docker Swap Disabled (Critical Bug):**
+   - Even worse, the container's `memorySwap` limit was set EQUAL to the `memory` limit
+   - In Docker, `--memory-swap` controls the sum of RAM + swap available to a container
+   - When `memorySwap == memory`, the container gets **zero swap** — no spilling to disk allowed
+   - EC2 had a host-level swap, but containers couldn't use it because Docker forbade it
+   - This was set in `DockerExecutor.java` line 122: `.withMemorySwap((long) memoryLimitMb * 1024 * 1024)`
+
+3. **EC2 Host Only Had 1GB Swap:**
+   - The host had only 1GB swap configured, and it was already ~140MB in use
+   - With no swap available for the container AND low memory, compiler OOM was inevitable
+
+**How We Debugged It:**
+- Initially thought it was a PCH (precompiled header) issue — removed PCH but problem persisted
+- Discovered via Docker logs that `cc1plus` was receiving signal 9 (kernel SIGKILL) → classic OOM kill
+- Realized container's memory limit (128MB) was far too low for a compiler
+- Found the `withMemorySwap` bug: the container had zero swap despite host swap being available
+
+**Solution (5-Part):**
+
+**1. Increase Host Swap (EC2):**
+```bash
+sudo fallocate -l 4G /swapfile  # Tried 4GB but disk was full; got 2GB instead
+sudo mkswap /swapfile
+sudo swapon /swapfile
+free -h  # Should show 1.9Gi swap
+```
+
+**2. Fix Container Memory Minimum** (`ExecutionRunner.java` line 76):
+```java
+// Before: int containerMemMb = request.getMemoryLimitMb();
+// After:
+int containerMemMb = Math.max(512, request.getMemoryLimitMb());
+```
+This ensures the **compiler container always gets at least 512MB**, even if the problem says "256MB limit". The 512MB is for the compiler itself. The problem's memory limit still enforces at runtime (per-process limit inside the container).
+
+**3. Fix Docker Swap Policy** (`DockerExecutor.java` line 122):
+```java
+// Before: .withMemorySwap((long) memoryLimitMb * 1024 * 1024)
+// After:
+.withMemorySwap(-1L)  // -1 means "unlimited swap" (use host swap)
+```
+This **critical fix** allows the container to spill into host swap if it needs more than the `--memory` limit. Now:
+- Container RAM limit: 512MB (hard limit)
+- Container total (RAM + swap): up to 2GB (spills to host swap)
+
+**4. Add Memory Cleanup Cron Job** (`/etc/cron.d/codex-cleanup`):
+```bash
+# Every 30 minutes: drop page cache + prune stopped containers
+*/30 * * * * root sync && echo 3 > /proc/sys/vm/drop_caches; \
+             docker container prune -f; \
+             find /tmp/codex/exec-* -maxdepth 0 -mmin +30 -exec rm -rf {} +
+
+# Every 6 hours: clean build cache + unused images
+0 */6 * * * root docker builder prune -f; docker image prune -f
+```
+
+**5. Restart Executor-Agent with New Code:**
+```bash
+# SCP fixed Java files to EC2
+scp DockerExecutor.java ExecutionRunner.java ubuntu@3.109.238.141:~/executor-agent/src/...
+
+# Rebuild JAR (with Maven inside Docker, output to /dev/shm to avoid full disk)
+docker run --rm -v ~/executor-agent:/build -v /dev/shm/.m2:/root/.m2 -v /dev/shm/target:/build/target \
+  maven:3.9-eclipse-temurin-17 \
+  mvn -f /build/pom.xml package -DskipTests -q
+
+# Patch seccomp resource into JAR (not in new build)
+python3 << 'EOF'
+import zipfile
+with zipfile.ZipFile('/home/ubuntu/executor-agent-deploy/app.jar') as z:
+    seccomp = z.read('BOOT-INF/classes/seccomp-judge.json')
+with zipfile.ZipFile('/dev/shm/target/executor-agent.jar', 'a') as z:
+    z.writestr('BOOT-INF/classes/seccomp-judge.json', seccomp)
+EOF
+
+# Restart container mounting JAR from /dev/shm (RAM-based, survives full disk)
+docker stop codex-executor-agent && docker rm codex-executor-agent
+docker run -d --name codex-executor-agent --restart unless-stopped \
+  -p 8081:8081 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /tmp/codex:/tmp/codex \
+  -v /dev/shm/target/executor-agent.jar:/app/app.jar:ro \
+  -e EXECUTOR_AGENT_TOKEN=57b4f75e92c1f14732b8d80bea36f12a1525af9a2b20444ce65c64e85b4be93b \
+  codex-executor-agent:latest
+```
+
+**Key Insights for Interview:**
+
+| Aspect | What I Did | Why It Matters |
+|--------|-----------|-----------------|
+| **Root Cause Identification** | Traced "Killed" signal → OOM kill → memory limits → container swap disabled | Not just fixing the symptom (increase RAM), but finding the actual constraint |
+| **Understanding Docker/Linux Memory Model** | `--memory` (RAM hard limit) vs `--memory-swap` (RAM + swap total) — default is no swap | Key insight: container couldn't use available host swap due to config |
+| **Coordinating Multiple Layers** | Fixed JVM code (Java) → Docker config → Host OS (swap) → Orchestration (cron) | Proves fullstack debugging — issue spanned kernel → Java application |
+| **Resource Constraints on Edge Cases** | EC2 t2.micro has only 911MB RAM total; disk was 100% full; had to build in tmpfs | Real-world constraints forced creative solutions (building to /dev/shm, .jar in RAM) |
+| **Production Readiness** | Added automatic cleanup, startup script to rebuild on reboot, health checks | Not just "works once" but "works reliably under real workload" |
+
+**Testing:**
+```bash
+# SSH to EC2, submit C++ code with bits/stdc++.h
+curl -X POST http://localhost:8080/api/submissions \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{...C++ code with #include <bits/stdc++.h>...}'
+
+# Should get ACCEPTED instead of COMPILATION_ERROR
+```
+
+**Lessons:**
+- Always check container resource limits vs. actual workload requirements
+- Docker's memory/swap coupling is often counterintuitive — read the docs, test locally
+- When debugging "killed" / "terminated" errors, check dmesg and cgroup limits first
+- Building in tmpfs when disk is full is a good workaround but not a solution — fix the root cause
+             

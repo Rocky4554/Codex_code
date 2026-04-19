@@ -34,4 +34,15 @@ public class Problem {
 
     @Column(nullable = false)
     private Integer memoryLimitMb;
+
+    @Column
+    private Integer orderNum;
+
+    // JSON arrays stored as TEXT: ["constraint1", "constraint2"]
+    @Column(columnDefinition = "TEXT")
+    private String constraintsJson;
+
+    // JSON arrays stored as TEXT: ["Array", "Hash Table"]
+    @Column(columnDefinition = "TEXT")
+    private String topicsJson;
 }

@@ -56,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/run").authenticated()
                         .requestMatchers("/api/submissions/**").authenticated()
                         .requestMatchers("/api/user/**").authenticated()
+                        .requestMatchers("/api/admin/**").authenticated()
 
                         // All other requests require authentication
                         .anyRequest().authenticated())

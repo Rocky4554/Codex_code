@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class ProblemRequest {
     @NotBlank(message = "Title is required")
@@ -30,4 +32,8 @@ public class ProblemRequest {
     @Min(value = 16, message = "Memory limit must be at least 16MB")
     @Max(value = 2048, message = "Memory limit must not exceed 2048MB")
     private Integer memoryLimitMb;
+
+    private Integer orderNum;
+    private List<String> constraints;
+    private List<String> topics;
 }
