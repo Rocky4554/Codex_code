@@ -23,6 +23,7 @@ public class ProblemDetailResponse {
     private Integer memoryLimitMb;
     private Integer orderNum;
     private List<ExampleDto> examples;
+    private List<TestCaseDto> testCases;
     private List<String> constraints;
     private List<String> topics;
 
@@ -35,5 +36,17 @@ public class ProblemDetailResponse {
         private String input;
         private String output;
         private String explanation;
+        private Integer displayOrder;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TestCaseDto {
+        private UUID id;
+        private String input;
+        private String expectedOutput;
+        private Boolean isSample;
     }
 }

@@ -25,6 +25,7 @@ public class TestCaseController {
 
     @GetMapping("/problem/{problemId}")
     public ResponseEntity<List<TestCase>> getTestCasesByProblemId(@PathVariable UUID problemId) {
+        requireAdmin();
         return ResponseEntity.ok(testCaseService.getTestCasesByProblemId(problemId));
     }
 
@@ -35,6 +36,7 @@ public class TestCaseController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TestCase> getTestCaseById(@PathVariable UUID id) {
+        requireAdmin();
         return testCaseService.getTestCaseById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

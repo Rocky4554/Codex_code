@@ -6,6 +6,7 @@ E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execut
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\dto\SubmitCodeRequest.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\entity\SubmissionResult.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\service\LeaderboardStatsBackfillService.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\config\CuratedProblemCatalogInitializer.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\entity\User.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\dto\CurrentUserLeaderboardResponse.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\admin\controller\AdminController.java

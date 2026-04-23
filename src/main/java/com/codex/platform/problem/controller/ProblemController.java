@@ -41,6 +41,14 @@ public class ProblemController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/admin")
+    public ResponseEntity<ProblemDetailResponse> getAdminProblemById(@PathVariable UUID id) {
+        requireAdmin();
+        return problemService.getAdminProblemDetailById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
     public ResponseEntity<Problem> createProblem(@Valid @RequestBody ProblemRequest request) {
         requireAdmin();

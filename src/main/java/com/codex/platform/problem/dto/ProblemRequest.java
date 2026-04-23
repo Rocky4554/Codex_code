@@ -1,6 +1,7 @@
 package com.codex.platform.problem.dto;
 
 import com.codex.platform.common.enums.ProblemDifficulty;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +10,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 public class ProblemRequest {
@@ -36,4 +38,38 @@ public class ProblemRequest {
     private Integer orderNum;
     private List<String> constraints;
     private List<String> topics;
+
+    @Valid
+    private List<ExampleRequest> examples;
+
+    @Valid
+    @Size(min = 1, message = "At least one test case is required")
+    private List<TestCaseRequest> testCases;
+
+    @Data
+    public static class ExampleRequest {
+        private UUID id;
+
+        @NotBlank(message = "Example input is required")
+        private String input;
+
+        @NotBlank(message = "Example output is required")
+        private String output;
+
+        private String explanation;
+        private Integer displayOrder;
+    }
+
+    @Data
+    public static class TestCaseRequest {
+        private UUID id;
+
+        @NotBlank(message = "Test case input is required")
+        private String input;
+
+        @NotBlank(message = "Test case expected output is required")
+        private String expectedOutput;
+
+        private Boolean isSample = false;
+    }
 }

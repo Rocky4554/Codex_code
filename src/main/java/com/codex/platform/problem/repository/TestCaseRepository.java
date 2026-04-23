@@ -12,4 +12,6 @@ public interface TestCaseRepository extends JpaRepository<TestCase, UUID> {
     List<TestCase> findByProblemId(UUID problemId);
 
     List<TestCase> findByProblemIdAndIsSample(UUID problemId, boolean isSample);
+
+    void deleteByProblemId(UUID problemId);
 }

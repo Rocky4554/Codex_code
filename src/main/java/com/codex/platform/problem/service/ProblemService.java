@@ -4,8 +4,10 @@ import com.codex.platform.problem.dto.ProblemDetailResponse;
 import com.codex.platform.problem.dto.ProblemRequest;
 import com.codex.platform.problem.entity.Problem;
 import com.codex.platform.problem.entity.ProblemExample;
+import com.codex.platform.problem.entity.TestCase;
 import com.codex.platform.problem.repository.ProblemExampleRepository;
 import com.codex.platform.problem.repository.ProblemRepository;
+import com.codex.platform.problem.repository.TestCaseRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class ProblemService {
 
     private final ProblemRepository problemRepository;
     private final ProblemExampleRepository exampleRepository;
+    private final TestCaseRepository testCaseRepository;
     private final ObjectMapper objectMapper;
 
     public Page<Problem> getAllProblems(Pageable pageable) {
@@ -36,14 +39,22 @@ public class ProblemService {
 
     public Optional<ProblemDetailResponse> getProblemDetailById(UUID id) {
         return problemRepository.findById(Objects.requireNonNull(id, "Problem ID is required"))
-                .map(this::toDetail);
+                .map(problem -> toDetail(problem, false));
+    }
+
+    public Optional<ProblemDetailResponse> getAdminProblemDetailById(UUID id) {
+        return problemRepository.findById(Objects.requireNonNull(id, "Problem ID is required"))
+                .map(problem -> toDetail(problem, true));
     }
 
     @Transactional
     public Problem createProblem(ProblemRequest request) {
         Problem problem = new Problem();
         applyRequest(problem, request);
-        return problemRepository.save(problem);
+        Problem savedProblem = problemRepository.save(problem);
+        syncExamples(savedProblem.getId(), request.getExamples());
+        syncTestCases(savedProblem.getId(), request.getTestCases());
+        return savedProblem;
     }
 
     @Transactional
@@ -51,7 +62,10 @@ public class ProblemService {
         Problem problem = problemRepository.findById(Objects.requireNonNull(id, "Problem ID is required"))
                 .orElseThrow(() -> new IllegalArgumentException("Problem not found"));
         applyRequest(problem, request);
-        return problemRepository.save(problem);
+        Problem savedProblem = problemRepository.save(problem);
+        syncExamples(savedProblem.getId(), request.getExamples());
+        syncTestCases(savedProblem.getId(), request.getTestCases());
+        return savedProblem;
     }
 
     @Transactional
@@ -60,12 +74,24 @@ public class ProblemService {
         if (!problemRepository.existsById(problemId)) {
             throw new IllegalArgumentException("Problem not found");
         }
+        exampleRepository.deleteByProblemId(problemId);
+        testCaseRepository.deleteByProblemId(problemId);
         problemRepository.deleteById(problemId);
     }
 
-    public ProblemDetailResponse toDetail(Problem problem) {
+    public ProblemDetailResponse toDetail(Problem problem, boolean includeHiddenTestCases) {
         List<ProblemExample> examples = exampleRepository
                 .findByProblemIdOrderByDisplayOrderAsc(problem.getId());
+        List<ProblemDetailResponse.TestCaseDto> testCases = includeHiddenTestCases
+                ? testCaseRepository.findByProblemId(problem.getId()).stream()
+                .map(testCase -> ProblemDetailResponse.TestCaseDto.builder()
+                        .id(testCase.getId())
+                        .input(testCase.getInput())
+                        .expectedOutput(testCase.getExpectedOutput())
+                        .isSample(testCase.getIsSample())
+                        .build())
+                .toList()
+                : Collections.emptyList();
 
         return ProblemDetailResponse.builder()
                 .id(problem.getId())
@@ -83,12 +109,15 @@ public class ProblemService {
                                 .input(e.getInput())
                                 .output(e.getOutput())
                                 .explanation(e.getExplanation())
+                                .displayOrder(e.getDisplayOrder())
                                 .build())
                         .toList())
+                .testCases(testCases)
                 .build();
     }
 
     private void applyRequest(Problem problem, ProblemRequest request) {
+        validateNestedCollections(request);
         problem.setTitle(request.getTitle().trim());
         problem.setDescription(request.getDescription().trim());
         problem.setDifficulty(request.getDifficulty());
@@ -97,6 +126,51 @@ public class ProblemService {
         problem.setOrderNum(request.getOrderNum());
         problem.setConstraintsJson(serializeList(request.getConstraints()));
         problem.setTopicsJson(serializeList(request.getTopics()));
+    }
+
+    private void syncExamples(UUID problemId, List<ProblemRequest.ExampleRequest> exampleRequests) {
+        exampleRepository.deleteByProblemId(problemId);
+        if (exampleRequests == null || exampleRequests.isEmpty()) {
+            return;
+        }
+
+        List<ProblemExample> examples = exampleRequests.stream()
+                .map(exampleRequest -> {
+                    ProblemExample example = new ProblemExample();
+                    example.setProblemId(problemId);
+                    example.setInput(exampleRequest.getInput().trim());
+                    example.setOutput(exampleRequest.getOutput().trim());
+                    example.setExplanation(exampleRequest.getExplanation() == null ? null : exampleRequest.getExplanation().trim());
+                    example.setDisplayOrder(exampleRequest.getDisplayOrder() != null ? exampleRequest.getDisplayOrder() : 0);
+                    return example;
+                })
+                .toList();
+        exampleRepository.saveAll(examples);
+    }
+
+    private void syncTestCases(UUID problemId, List<ProblemRequest.TestCaseRequest> testCaseRequests) {
+        if (testCaseRequests == null || testCaseRequests.isEmpty()) {
+            throw new IllegalArgumentException("At least one test case is required");
+        }
+
+        testCaseRepository.deleteByProblemId(problemId);
+        List<TestCase> testCases = testCaseRequests.stream()
+                .map(testCaseRequest -> {
+                    TestCase testCase = new TestCase();
+                    testCase.setProblemId(problemId);
+                    testCase.setInput(testCaseRequest.getInput().trim());
+                    testCase.setExpectedOutput(testCaseRequest.getExpectedOutput().trim());
+                    testCase.setIsSample(Boolean.TRUE.equals(testCaseRequest.getIsSample()));
+                    return testCase;
+                })
+                .toList();
+        testCaseRepository.saveAll(testCases);
+    }
+
+    private void validateNestedCollections(ProblemRequest request) {
+        if (request.getTestCases() == null || request.getTestCases().isEmpty()) {
+            throw new IllegalArgumentException("At least one test case is required");
+        }
     }
 
     private String serializeList(List<String> list) {
