@@ -10,7 +10,8 @@ import com.codex.platform.problem.repository.TestCaseRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,20 +19,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Curated catalog sync runs on {@link ApplicationReadyEvent} so the servlet container and health
+ * checks can complete before a long DB upsert, and to avoid the Render/SIGTERM race with
+ * {@code CommandLineRunner} when startup takes minutes.
+ */
 @Component
-@Order(20)
+@Order(10)
 @RequiredArgsConstructor
 @Slf4j
-public class CuratedProblemCatalogInitializer implements CommandLineRunner {
+public class CuratedProblemCatalogInitializer {
 
     private final ProblemRepository problemRepository;
     private final ProblemExampleRepository exampleRepository;
     private final TestCaseRepository testCaseRepository;
     private final ObjectMapper objectMapper;
 
-    @Override
+    @EventListener(ApplicationReadyEvent.class)
     @Transactional
-    public void run(String... args) throws Exception {
+    public void onApplicationReady() throws Exception {
         int upserted = 0;
         for (ProblemSeed seed : catalog()) {
             upsert(seed);
