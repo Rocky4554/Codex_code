@@ -34,6 +34,18 @@ public class User {
     @Column(nullable = false)
     private String role = "USER"; // "USER" or "ADMIN"
 
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private Integer solvedEasy = 0;
+
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private Integer solvedMedium = 0;
+
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private Integer solvedHard = 0;
+
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private Integer totalScore = 0;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -5,7 +5,9 @@ E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\config
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\dto\ExecutionResult.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\dto\SubmitCodeRequest.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\entity\SubmissionResult.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\service\LeaderboardStatsBackfillService.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\entity\User.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\dto\CurrentUserLeaderboardResponse.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\admin\controller\AdminController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\config\AsyncConfig.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\client\dto\ExecuteRequest.java
@@ -21,6 +23,7 @@ E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\common
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\dto\SubmissionResponse.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\auth\controller\AuthController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\service\SubmissionService.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\controller\LeaderboardController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\entity\Problem.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\run\service\RunService.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\common\exception\GlobalExceptionHandler.java
@@ -28,11 +31,13 @@ E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execut
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\entity\ProblemExample.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\config\SecurityConfig.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\service\DockerExecutor.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\service\LeaderboardCacheService.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\repository\LanguageRepository.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\entity\UserProblemStatus.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\repository\UserProblemStatusRepository.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\dto\SubmitCodeResponse.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\repository\SubmissionResultRepository.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\dto\LeaderboardEntryResponse.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\controller\LanguageController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\controller\SubmissionController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\realtime\service\SseService.java
@@ -60,10 +65,12 @@ E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execut
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\controller\TestCaseController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\submission\service\AsyncResultPersister.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\dto\TestCaseRequest.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\service\LeaderboardBackfillInitializer.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\auth\filter\JwtAuthenticationFilter.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\execution\service\ExecutionService.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\controller\UserController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\monitoring\service\MonitoringService.java
+E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\user\service\LeaderboardService.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\CodexPlatformApplication.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\monitoring\controller\HealthController.java
 E:\Personal Projects\Codex\Codex_backend\src\main\java\com\codex\platform\problem\controller\ProblemController.java

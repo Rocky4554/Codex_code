@@ -1,3 +1,4 @@
+
 package com.codex.platform.problem.entity;
 
 import com.codex.platform.common.enums.ProblemDifficulty;
