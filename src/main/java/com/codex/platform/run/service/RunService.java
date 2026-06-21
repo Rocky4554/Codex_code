@@ -126,7 +126,7 @@ public class RunService {
                             .input(tc != null ? tc.getInput() : "")
                             .expectedOutput(tc != null ? tc.getExpectedOutput() : "")
                             .actualOutput(r.getStdout())
-                            .passed("ACCEPTED".equals(r.getStatus()))
+                            .passed("PASSED".equals(r.getStatus()))
                             .build();
                 })
                 .toList();
