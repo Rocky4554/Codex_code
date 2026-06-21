@@ -25,14 +25,33 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         if (languageRepository.count() == 0) {
             initializeLanguages();
+        } else {
+            synchronizeLanguages();
         }
 
         if (problemRepository.count() == 0) {
             initializeSampleProblems();
         } else {
             synchronizeTimeLimits();
-        }    
-    } 
+        }
+    }
+
+    private void synchronizeLanguages() {
+        languageRepository.findAll().forEach(lang -> {
+            if ("C++".equals(lang.getName())) {
+                boolean changed = false;
+                if (lang.getCompileCommand() != null && lang.getCompileCommand().contains("-std=c++11")) {
+                    lang.setCompileCommand("g++ -std=c++17 -o solution solution.cpp");
+                    lang.setVersion("17");
+                    changed = true;
+                }
+                if (changed) {
+                    languageRepository.save(lang);
+                    log.info("Updated C++ compile command to c++17 (matches precompiled header in Docker image)");
+                }
+            }
+        });
+    }
 
     private void synchronizeTimeLimits() {
         log.info("Synchronizing time limits to 5s...");
