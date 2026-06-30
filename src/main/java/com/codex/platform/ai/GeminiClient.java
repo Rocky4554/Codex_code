@@ -13,9 +13,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Thin HTTP client for Google's Gemini {@code generateContent} REST API.
@@ -122,6 +130,93 @@ public class GeminiClient {
         }
 
         return extractText(response);
+    }
+
+    /**
+     * Stream a multi-turn generation token-by-token via Gemini's
+     * {@code streamGenerateContent?alt=sse} endpoint.
+     *
+     * <p>Each incremental text delta is passed to {@code onChunk} as it arrives.
+     * Uses the JDK {@link HttpClient} with {@code BodyHandlers.ofLines()} (no extra
+     * dependency, no reactive stack) — the call BLOCKS the calling thread until the
+     * stream ends, so callers must invoke it from a background thread (the assistant
+     * service runs it on its own executor while an SseEmitter relays chunks).
+     *
+     * @param systemInstruction persona / rules / problem context
+     * @param contents          ordered turns: {@code [{role:"user"|"model", parts:[{text:..}]}]}
+     * @param onChunk           receives each text delta
+     */
+    public void streamGenerate(String systemInstruction, List<Map<String, Object>> contents,
+                               Consumer<String> onChunk) {
+        if (!isConfigured()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Gemini is not configured (set GEMINI_API_KEY)");
+        }
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (systemInstruction != null && !systemInstruction.isBlank()) {
+            body.put("system_instruction", Map.of("parts", List.of(Map.of("text", systemInstruction))));
+        }
+        body.put("contents", contents);
+        body.put("generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 8192));
+
+        String json;
+        try {
+            json = objectMapper.writeValueAsString(body);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to build Gemini request: " + e.getMessage(), e);
+        }
+
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+        HttpRequest request = HttpRequest.newBuilder(URI.create(
+                        baseUrl + "/models/" + model + ":streamGenerateContent?alt=sse&key=" + apiKey))
+                .timeout(Duration.ofMillis(timeoutMs))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<Stream<String>> response;
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofLines());
+        } catch (Exception e) {
+            log.error("Gemini stream call failed: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Gemini stream request failed: " + e.getMessage(), e);
+        }
+
+        if (response.statusCode() >= 400) {
+            String err = response.body().collect(Collectors.joining("\n"));
+            log.error("Gemini stream HTTP {}: {}", response.statusCode(),
+                    err.length() > 400 ? err.substring(0, 400) : err);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Gemini stream error (HTTP " + response.statusCode() + ")");
+        }
+
+        // SSE frames look like:  data: {"candidates":[{"content":{"parts":[{"text":"..."}]}}]}
+        response.body().forEach(line -> {
+            if (!line.startsWith("data:")) {
+                return;
+            }
+            String payload = line.substring(5).trim();
+            if (payload.isEmpty() || "[DONE]".equals(payload)) {
+                return;
+            }
+            try {
+                JsonNode node = objectMapper.readTree(payload);
+                StringBuilder sb = new StringBuilder();
+                for (JsonNode part : node.path("candidates").path(0).path("content").path("parts")) {
+                    sb.append(part.path("text").asText(""));
+                }
+                if (sb.length() > 0) {
+                    onChunk.accept(sb.toString());
+                }
+            } catch (Exception parseError) {
+                log.debug("Skipping unparseable Gemini stream line: {}", parseError.getMessage());
+            }
+        });
     }
 
     /** Pull and concatenate every text part from {@code candidates[0].content.parts[]}. */
