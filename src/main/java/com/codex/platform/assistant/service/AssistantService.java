@@ -76,11 +76,23 @@ public class AssistantService {
         ProblemContext ctx = loadContext(problemId);
         String system = PERSONA + "\nPROBLEM:\n" + ctx.text + """
 
-                Task: Write a correct, complete solution program in %s. The judge runs the program
-                as-is: it must read ALL input from standard input and print ONLY the answer to
-                standard output, following the problem's Input/Output format. Do NOT write a
-                class/method template that is never called. Return the program in a single fenced
-                code block, with a one-line explanation above it.
+                Task: Write a correct, COMPLETE, modern, idiomatic, and OPTIMISED solution program in %s.
+
+                Requirements:
+                - Use an efficient algorithm and data structures suitable for the constraints
+                  (do not use needless brute force when a better approach fits the limits).
+                - Write clean, modern, idiomatic code for the language.
+                - The judge runs the program AS-IS: it must read ALL input from standard input
+                  and print ONLY the answer to standard output, exactly following the problem's
+                  Input/Output format. Do NOT write a class/method template that is never called.
+                - C++: begin with `#include <bits/stdc++.h>` and `using namespace std;`, and add
+                  `ios_base::sync_with_stdio(false); cin.tie(nullptr);` in main for fast I/O.
+                - Python: read input via sys.stdin; avoid slow patterns inside loops.
+                - Java: read with a BufferedReader and build output with a StringBuilder.
+                - JavaScript: read all of stdin (e.g. require('fs').readFileSync(0,'utf8')) and
+                  print with console.log.
+
+                Return the program in a single fenced code block, with a one-line explanation above it.
                 """.formatted(language);
         run(emitter, userId, problemId, conversationId, AssistantAction.GENERATE,
                 "Generate a solution in " + language,
