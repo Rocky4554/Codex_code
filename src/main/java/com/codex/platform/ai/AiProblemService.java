@@ -55,7 +55,9 @@ public class AiProblemService {
               "examples": [            // human-readable, shown to users (1-3 items)
                 { "input": string, "output": string, "explanation": string }
               ],
-              "testCases": [           // machine-graded; 6-10 items, mix of edge cases
+              "testCases": [           // machine-graded; exactly 5 items (a mix of
+                                       // normal and edge cases) UNLESS the user's
+                                       // guidance asks for a different number
                 { "input": string, "expectedOutput": string, "isSample": boolean }
               ],
               "referenceSolution": {
@@ -79,7 +81,8 @@ public class AiProblemService {
             - examples[] may use friendly notation (e.g. "nums = [2,7], target = 9"); they are
               for display only and are NOT executed — they need not match the stdin format.
             - Prefer Python for the reference solution unless the problem needs otherwise.
-            - Include at least 2 sample test cases (isSample = true).
+            - Produce exactly 5 testCases by default (unless the user's guidance requests a
+              different number), of which at least 2 are sample cases (isSample = true).
 
             Example of a VALID Python reference solution (for "read n then n ints, print their sum"):
             data = sys.stdin.read().split()
