@@ -32,11 +32,14 @@ public class AssistantRequests {
         private UUID conversationId;
     }
 
-    /** Free-form chat question. */
+    /** Free-form chat question. Carries the current editor code so CodeBot can
+     *  answer "fix/edit my code" requests without asking for it. Both are optional. */
     @Data
     public static class ChatRequest {
         @NotBlank(message = "message is required")
         private String message;
+        private String language;
+        private String code;
         private UUID conversationId;
     }
 }

@@ -52,8 +52,15 @@ public class AssistantService {
 
     private static final String PERSONA = """
             You are CodeBot, a helpful coding assistant embedded in an online judge.
-            You help the user understand and solve ONE specific problem. Keep answers
-            focused and use clear Markdown (headings, lists, fenced code blocks).
+            You help the user understand and solve ONE specific problem.
+
+            Style rules (follow strictly):
+            - Be brief and get straight to the point. No greetings, no preamble, no
+              "Certainly!" — start with the answer.
+            - Use clear, simple language a beginner understands. Prefer short sentences
+              and small bullet lists over long paragraphs.
+            - Use Markdown: short headings, tight bullet lists, and fenced code blocks.
+            - Only include what the user needs. Do not pad the answer.
             """;
 
     // ── Public actions ─────────────────────────────────────────────────────────
@@ -104,10 +111,24 @@ public class AssistantService {
         ProblemContext ctx = loadContext(problemId);
         String system = PERSONA + "\nPROBLEM:\n" + ctx.text + """
 
-                Task: Review the user's solution for THIS problem. Give: (1) a one-line verdict,
-                (2) a list of concrete issues as "Line N: problem -> fix" (use real line numbers
-                from their code), (3) edge cases they may miss, (4) time/space complexity, and
-                (5) improvements. Be specific. Markdown.
+                Task: Review the user's solution for THIS problem. Keep the WHOLE review
+                short and scannable — aim for under ~200 words. Use exactly these sections,
+                in this order, and skip a section if it has nothing useful:
+
+                **Verdict** — one sentence: does it work, and if not, the single main reason.
+
+                **Bugs** — a short bullet list. Each bullet: `Line N: what's wrong → the fix`.
+                Use the real line numbers from their code. Only list bugs that actually break
+                the solution; do not nitpick style.
+
+                **Edge cases** — at most 2 bullets, only if they realistically fail one.
+
+                **Complexity** — one line: time and space (e.g. `O(n) time, O(k) space`).
+
+                **Fixed code** — if there are bugs, give the corrected full program in ONE
+                fenced code block. Otherwise skip this section.
+
+                Do not repeat the problem statement. Do not add extra sections.
                 """;
         String prompt = "Review my solution. Here is my " + language + " code:\n```" + language + "\n" + code + "\n```";
         run(emitter, userId, problemId, conversationId, AssistantAction.REVIEW,
@@ -116,13 +137,29 @@ public class AssistantService {
                 system, false, "Review (" + language + "): " + ctx.title);
     }
 
-    public void chat(SseEmitter emitter, UUID userId, UUID problemId, String message, UUID conversationId) {
+    public void chat(SseEmitter emitter, UUID userId, UUID problemId, String message,
+                     String language, String code, UUID conversationId) {
         ProblemContext ctx = loadContext(problemId);
-        String system = PERSONA + "\nPROBLEM:\n" + ctx.text + """
 
-                Task: Answer the user's questions about understanding or solving THIS problem.
-                If the user's message is unrelated to this problem or to programming, reply with
-                EXACTLY this sentence and nothing else: "This question is not related to the problem."
+        String editorSection = "";
+        if (code != null && !code.isBlank()) {
+            String lang = (language == null || language.isBlank()) ? "" : language;
+            editorSection = "\n\nThe user's CURRENT editor code (this IS their code — use it "
+                    + "for any 'fix/edit/correct my code' request):\n```" + lang + "\n" + code + "\n```\n";
+        }
+
+        String system = PERSONA + "\nPROBLEM:\n" + ctx.text + editorSection + """
+
+                Task: Answer the user's question about THIS problem or their code for it.
+                Requests like "fix my code", "edit my code", "give me the correct code",
+                "why is it failing", or "explain the error" ARE about this problem — always
+                help with them using the editor code shown above. When they ask you to fix or
+                correct their code, return the corrected FULL program in one fenced code block
+                plus a one-line note on what you changed.
+
+                ONLY if the message is clearly off-topic (not about this problem, its code, or
+                programming at all — e.g. weather, jokes) reply with EXACTLY this sentence and
+                nothing else: "This question is not related to the problem."
                 """;
         run(emitter, userId, problemId, conversationId, AssistantAction.CHAT,
                 message,

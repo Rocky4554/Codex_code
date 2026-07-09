@@ -71,7 +71,8 @@ public class AssistantController {
     public SseEmitter chat(@PathVariable UUID problemId, @Valid @RequestBody ChatRequest req) {
         UUID userId = JwtAuthenticationFilter.getCurrentUserId();
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
-        assistantService.chat(emitter, userId, problemId, req.getMessage(), req.getConversationId());
+        assistantService.chat(emitter, userId, problemId, req.getMessage(),
+                req.getLanguage(), req.getCode(), req.getConversationId());
         return emitter;
     }
 
