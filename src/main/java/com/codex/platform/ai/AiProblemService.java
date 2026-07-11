@@ -61,11 +61,16 @@ public class AiProblemService {
                 { "input": string, "expectedOutput": string, "isSample": boolean }
               ],
               "referenceSolution": {
-                "language": "Python" | "Java" | "C++" | "JavaScript",
+                "language": "Python" | "Java" | "C++" | "JavaScript" | "SQL",
                 "sourceCode": string   // a COMPLETE, RUNNABLE program (see rules)
               }
             }
 
+            There are TWO kinds of problem you can author. Pick SQL MODE only when the
+            requested problem is a database/SQL query problem (the user asks for SQL, a
+            query, joins, aggregation over tables, etc.). Otherwise use PROGRAM MODE.
+
+            ── PROGRAM MODE (default) ──
             Critical rules:
             - The reference solution MUST be a complete, standalone program that reads ALL
               of its input from standard input (e.g. Python input()/sys.stdin, Java Scanner,
@@ -89,6 +94,49 @@ public class AiProblemService {
             n = int(data[0])
             print(sum(int(x) for x in data[1:1+n]))
             (with "import sys" at the top). Note: it reads stdin and prints — no class, no function.
+
+            ── SQL MODE (only for database/query problems) ──
+            The judge runs SQL problems on SQLite. For each test case it creates an EMPTY
+            database, executes testCases[].input against it to build and populate the tables,
+            then runs the user's query and compares its printed rows to expectedOutput.
+
+            In SQL MODE the fields mean something different — follow this EXACTLY:
+            - "referenceSolution": { "language": "SQL", "sourceCode": "<a single SELECT query>" }
+              The sourceCode is ONLY the query. It must NOT contain CREATE TABLE or INSERT.
+            - "testCases[].input": the COMPLETE schema + seed data for that case — the
+              CREATE TABLE statement(s) followed by the INSERT statement(s), each ending with
+              a semicolon. Every test case is run against a FRESH, EMPTY database, so each one
+              MUST repeat its own full CREATE TABLE + INSERTs. Never assume a previous case
+              created the tables.
+            - "testCases[].expectedOutput": exactly what SQLite prints for the reference query
+              on that case's data — ONE ROW PER LINE, columns joined by a "|" character, and
+              NO header line. A single-column result is therefore just one value per line.
+              An empty result set means an empty expectedOutput string.
+
+            Critical SQL rules:
+            - The reference query MUST end with an ORDER BY that fully determines the row
+              order. Rows are compared as text line-by-line, so a query whose order is
+              unspecified would be graded incorrectly. State the required ordering in the
+              description too (e.g. "ordered by name ascending").
+            - Use SQLite dialect ONLY. Do NOT use MySQL-only constructs such as DATE_FORMAT,
+              IF(), IFNULL-as-IF, or backtick-quoted identifiers. Use SQLite equivalents:
+              strftime(...) for dates, CASE WHEN ... THEN ... ELSE ... END instead of IF().
+            - The description MUST show the table schema (column names and types) so the user
+              knows what to query, and MUST state the required ordering.
+            - examples[] stay human-readable (a small table and the expected rows); they are
+              for display only and are not executed.
+
+            Example of a VALID SQL problem's pieces:
+              testCases[0].input:
+                CREATE TABLE employees (id INTEGER, name TEXT, department TEXT);
+                INSERT INTO employees VALUES (1,'Alice','Engineering');
+                INSERT INTO employees VALUES (2,'Bob','Sales');
+                INSERT INTO employees VALUES (3,'Charlie','Engineering');
+              referenceSolution.sourceCode:
+                SELECT name FROM employees WHERE department = 'Engineering' ORDER BY name;
+              testCases[0].expectedOutput:
+                Alice
+                Charlie
             """;
 
     public ProblemDraft generate(String name, String notes) {

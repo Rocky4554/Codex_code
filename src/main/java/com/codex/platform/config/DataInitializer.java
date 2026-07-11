@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -34,6 +36,124 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             synchronizeTimeLimits();
         }
+
+        // SQL (SQLite) support — idempotent, so it lands on both fresh and
+        // already-seeded databases. See Codex_Execution_Engine/dev_docs/SQL_EXECUTION.md.
+        ensureSqlLanguage();
+        ensureSqlSampleProblem();
+    }
+
+    /**
+     * The SQL execute command, run once per test case inside the submission's container.
+     *
+     * <p>Three things here are load-bearing:
+     * <ul>
+     *   <li>{@code rm -f /tmp/q.db} — the executor reuses ONE container for every test
+     *       case, so the database file survives between them. Without this reset, test 2's
+     *       {@code CREATE TABLE} would fail and its query would silently run against test
+     *       1's data. Each test case must start from an empty database.</li>
+     *   <li>The {@code sh -c '...'} wrapper — the executor appends
+     *       {@code < /workspace/input.txt} to this command. The wrapper makes that redirect
+     *       attach to the outer shell instead of hijacking the inner
+     *       {@code < /workspace/solution.sql} (last redirect wins in the shell).</li>
+     *   <li>{@code --safe} disables SQLite's dangerous dot-commands (.shell/.system/ATTACH);
+     *       {@code -bail} makes a broken query exit non-zero so it reports as RUNTIME_ERROR.</li>
+     * </ul>
+     */
+    private static final String SQL_EXECUTE_COMMAND =
+            "sh -c 'rm -f /tmp/q.db; "
+          + "sqlite3 --safe -bail /tmp/q.db < /workspace/input.txt >/dev/null 2>&1; "
+          + "sqlite3 --safe -bail /tmp/q.db < /workspace/solution.sql'";
+
+    /**
+     * Register (or repair) the SQL language backed by SQLite. Interpreted — no compile
+     * step: each test case's input holds the schema + seed SQL, the user's submission is
+     * the query, and stdout is compared as text.
+     *
+     * <p>Upserts rather than skipping, so a deployment that already has an outdated
+     * execute command gets corrected on the next startup.
+     */
+    private void ensureSqlLanguage() {
+        Optional<Language> existing = languageRepository.findAll().stream()
+                .filter(l -> "SQL".equalsIgnoreCase(l.getName()))
+                .findFirst();
+
+        if (existing.isPresent()) {
+            Language sql = existing.get();
+            if (!SQL_EXECUTE_COMMAND.equals(sql.getExecuteCommand())) {
+                sql.setExecuteCommand(SQL_EXECUTE_COMMAND);
+                languageRepository.save(sql);
+                log.info("Updated SQL execute command (per-test-case database reset)");
+            }
+            return;
+        }
+
+        Language sql = new Language();
+        sql.setName("SQL");
+        sql.setVersion("SQLite 3.45");
+        sql.setDockerImage("codex-sql:latest");
+        sql.setFileExtension(".sql");
+        sql.setCompileCommand(null); // interpreted — no compile phase
+        sql.setExecuteCommand(SQL_EXECUTE_COMMAND);
+        languageRepository.save(sql);
+        log.info("Registered SQL (SQLite) language for execution");
+    }
+
+    /**
+     * Seed one sample SQL problem so the flow is testable end-to-end. Each test
+     * case supplies a different dataset via its {@code input} (schema + seed), and
+     * the problem statement requires {@code ORDER BY} so the row order is
+     * deterministic under the platform's line-by-line text comparison.
+     */
+    private void ensureSqlSampleProblem() {
+        String title = "SQL: Engineering Employees";
+        boolean exists = problemRepository.findAll().stream()
+                .anyMatch(p -> title.equals(p.getTitle()));
+        if (exists) {
+            return;
+        }
+
+        Problem problem = new Problem();
+        problem.setTitle(title);
+        problem.setDescription(
+                "You are given a table employees(id, name, department, salary).\n\n" +
+                "Write a SQL query that returns the name of every employee in the " +
+                "'Engineering' department, ordered by name in ascending order.\n\n" +
+                "IMPORTANT: results are checked row-by-row as text, so you MUST add " +
+                "ORDER BY name to make the order deterministic.\n\n" +
+                "The table is created and populated for you before your query runs — " +
+                "submit only your SELECT statement. Dialect: SQLite.");
+        problem.setDifficulty(ProblemDifficulty.EASY);
+        problem.setTimeLimitMs(5000);
+        problem.setMemoryLimitMb(128);
+        Problem saved = problemRepository.save(problem);
+
+        String schema1 =
+                "CREATE TABLE employees (id INTEGER, name TEXT, department TEXT, salary INTEGER);\n" +
+                "INSERT INTO employees VALUES (1,'Alice','Engineering',90000);\n" +
+                "INSERT INTO employees VALUES (2,'Bob','Sales',60000);\n" +
+                "INSERT INTO employees VALUES (3,'Charlie','Engineering',85000);\n" +
+                "INSERT INTO employees VALUES (4,'Diana','Engineering',95000);";
+        TestCase tc1 = new TestCase();
+        tc1.setProblemId(saved.getId());
+        tc1.setInput(schema1);
+        tc1.setExpectedOutput("Alice\nCharlie\nDiana");
+        tc1.setIsSample(true);
+        testCaseRepository.save(tc1);
+
+        String schema2 =
+                "CREATE TABLE employees (id INTEGER, name TEXT, department TEXT, salary INTEGER);\n" +
+                "INSERT INTO employees VALUES (1,'Zoe','Engineering',70000);\n" +
+                "INSERT INTO employees VALUES (2,'Yara','Marketing',65000);\n" +
+                "INSERT INTO employees VALUES (3,'Xavier','Engineering',72000);";
+        TestCase tc2 = new TestCase();
+        tc2.setProblemId(saved.getId());
+        tc2.setInput(schema2);
+        tc2.setExpectedOutput("Xavier\nZoe");
+        tc2.setIsSample(false);
+        testCaseRepository.save(tc2);
+
+        log.info("Seeded sample SQL problem: {}", title);
     }
 
     private void synchronizeLanguages() {

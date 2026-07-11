@@ -200,12 +200,15 @@ public class SolutionVerifier {
             if (exact.isPresent()) {
                 return exact.get();
             }
-            // Tolerate common aliases the model might emit.
+            // Tolerate common aliases the model might emit. SQL aliases matter especially:
+            // without them an emitted "SQLite"/"MySQL" would miss and fall through to the
+            // Python fallback below, silently running a SQL query as a Python program.
             String normalized = switch (languageName.trim().toLowerCase()) {
                 case "py", "python3", "python 3" -> "Python";
                 case "c++", "cpp", "cplusplus" -> "C++";
                 case "js", "node", "nodejs" -> "JavaScript";
                 case "java" -> "Java";
+                case "sql", "sqlite", "sqlite3", "mysql", "postgres", "postgresql" -> "SQL";
                 default -> languageName.trim();
             };
             Optional<Language> aliased = languageRepository.findByName(normalized);

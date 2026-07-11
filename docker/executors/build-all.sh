@@ -15,6 +15,7 @@ declare -A IMAGES=(
     [java]="codex-java:latest"
     [python]="codex-python:latest"
     [javascript]="codex-javascript:latest"
+    [sql]="codex-sql:latest"
 )
 
 # If args provided, build only those; otherwise build all
