@@ -158,10 +158,8 @@ public class GeminiClient {
             body.put("system_instruction", Map.of("parts", List.of(Map.of("text", systemInstruction))));
         }
         body.put("contents", contents);
-        // Cap output so CodeBot answers stay short and stream fast. A full solution or a
-        // focused review fits comfortably in 2048 tokens; the old 8192 let the model ramble
-        // into 2000-3000 token walls of text that took 10-15s to finish.
-        body.put("generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 2048));
+        // Allow richer explanations/reviews during streaming while keeping latency reasonable.
+        body.put("generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 1500));
 
         String json;
         try {

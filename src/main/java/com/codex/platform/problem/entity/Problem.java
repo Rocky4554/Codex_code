@@ -46,4 +46,22 @@ public class Problem {
     // JSON arrays stored as TEXT: ["Array", "Hash Table"]
     @Column(columnDefinition = "TEXT")
     private String topicsJson;
+
+    /** Null for admin/catalog problems; set when a user creates a problem for a playlist. */
+    @Column
+    private UUID createdByUserId;
+
+    /**
+     * When false, the problem is hidden from the public /problems catalog
+     * (user-created playlist problems). Defaults to true for admin-authored problems.
+     */
+    @Column(nullable = false, columnDefinition = "boolean not null default true")
+    private Boolean inCatalog = true;
+
+    @PrePersist
+    void onCreate() {
+        if (inCatalog == null) {
+            inCatalog = true;
+        }
+    }
 }

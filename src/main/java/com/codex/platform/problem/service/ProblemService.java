@@ -34,7 +34,8 @@ public class ProblemService {
     private final ObjectMapper objectMapper;
 
     public Page<Problem> getAllProblems(Pageable pageable) {
-        return problemRepository.findAll(Objects.requireNonNull(pageable, "Pageable is required"));
+        // Hide user-created playlist-only problems from the public catalog.
+        return problemRepository.findCatalogProblems(Objects.requireNonNull(pageable, "Pageable is required"));
     }
 
     public Optional<ProblemDetailResponse> getProblemDetailById(UUID id) {
@@ -51,6 +52,21 @@ public class ProblemService {
     public Problem createProblem(ProblemRequest request) {
         Problem problem = new Problem();
         applyRequest(problem, request);
+        problem.setInCatalog(true);
+        problem.setCreatedByUserId(null);
+        Problem savedProblem = problemRepository.save(problem);
+        syncExamples(savedProblem.getId(), request.getExamples());
+        syncTestCases(savedProblem.getId(), request.getTestCases());
+        return savedProblem;
+    }
+
+    /** User-authored problem for a private playlist — not shown in the public catalog. */
+    @Transactional
+    public Problem createUserProblem(UUID userId, ProblemRequest request) {
+        Problem problem = new Problem();
+        applyRequest(problem, request);
+        problem.setInCatalog(false);
+        problem.setCreatedByUserId(Objects.requireNonNull(userId, "User ID is required"));
         Problem savedProblem = problemRepository.save(problem);
         syncExamples(savedProblem.getId(), request.getExamples());
         syncTestCases(savedProblem.getId(), request.getTestCases());

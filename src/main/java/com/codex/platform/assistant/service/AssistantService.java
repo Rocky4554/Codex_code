@@ -55,12 +55,10 @@ public class AssistantService {
             You help the user understand and solve ONE specific problem.
 
             Style rules (follow strictly):
-            - Be brief and get straight to the point. No greetings, no preamble, no
-              "Certainly!" — start with the answer.
-            - Use clear, simple language a beginner understands. Prefer short sentences
-              and small bullet lists over long paragraphs.
-            - Use Markdown: short headings, tight bullet lists, and fenced code blocks.
-            - Only include what the user needs. Do not pad the answer.
+            - Start directly with the answer (no greetings or preamble).
+            - Use clear, simple language.
+            - Keep it FAST and CONCISE. Use short bullet points instead of paragraphs.
+            - Provide the necessary details, but do not overwrite or ramble.
             """;
 
     // ── Public actions ─────────────────────────────────────────────────────────
@@ -69,9 +67,13 @@ public class AssistantService {
         ProblemContext ctx = loadContext(problemId);
         String system = PERSONA + "\nPROBLEM:\n" + ctx.text + """
 
-                Task: Explain this problem to a beginner. Cover: what it asks, the input/output
-                format, and the core idea to solve it. Be concise and friendly. Do NOT give full
-                solution code unless asked.
+                Task: Explain this problem to a beginner. Cover these points BRIEFLY:
+                - What it asks (1-2 sentences)
+                - Core algorithm idea (1-2 sentences)
+                - Step-by-step approach (short bullets)
+                - Time/Space complexity
+
+                Keep it clear and structured. Do NOT give full solution code unless asked.
                 """;
         run(emitter, userId, problemId, conversationId, AssistantAction.EXPLAIN,
                 "Explain this problem",
@@ -111,17 +113,15 @@ public class AssistantService {
         ProblemContext ctx = loadContext(problemId);
         String system = PERSONA + "\nPROBLEM:\n" + ctx.text + """
 
-                Task: Review the user's solution for THIS problem. Keep the WHOLE review
-                short and scannable — aim for under ~200 words. Use exactly these sections,
-                in this order, and skip a section if it has nothing useful:
+                Task: Review the user's solution for THIS problem. Give a FAST, actionable
+                review with concrete fixes. Use exactly these sections, keep bullets very short, and skip a
+                section only if it has nothing useful:
 
                 **Verdict** — one sentence: does it work, and if not, the single main reason.
 
-                **Bugs** — a short bullet list. Each bullet: `Line N: what's wrong → the fix`.
+                **Bugs** — short bullet list. Each bullet: `Line N: what's wrong → the fix`.
                 Use the real line numbers from their code. Only list bugs that actually break
                 the solution; do not nitpick style.
-
-                **Edge cases** — at most 2 bullets, only if they realistically fail one.
 
                 **Complexity** — one line: time and space (e.g. `O(n) time, O(k) space`).
 

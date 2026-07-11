@@ -1,11 +1,13 @@
 package com.codex.platform.problem.controller;
 
 import com.codex.platform.auth.filter.JwtAuthenticationFilter;
+import com.codex.platform.playlist.service.PlaylistService;
 import com.codex.platform.problem.dto.ProblemDetailResponse;
 import com.codex.platform.problem.dto.ProblemRequest;
 import com.codex.platform.problem.entity.Problem;
 import com.codex.platform.problem.entity.ProblemExample;
 import com.codex.platform.problem.repository.ProblemExampleRepository;
+import com.codex.platform.problem.repository.ProblemRepository;
 import com.codex.platform.problem.service.ProblemService;
 import jakarta.validation.Valid;
 import lombok.Data;
@@ -27,6 +29,8 @@ public class ProblemController {
 
     private final ProblemService problemService;
     private final ProblemExampleRepository exampleRepository;
+    private final ProblemRepository problemRepository;
+    private final PlaylistService playlistService;
 
     @GetMapping
     public ResponseEntity<Page<Problem>> getAllProblems(
@@ -36,6 +40,9 @@ public class ProblemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ProblemDetailResponse> getProblemById(@PathVariable UUID id) {
+        Problem problem = problemRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Problem not found"));
+        assertCanView(problem);
         return problemService.getProblemDetailById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -99,6 +106,29 @@ public class ProblemController {
         private String output;
         private String explanation;
         private Integer displayOrder;
+    }
+
+    private void assertCanView(Problem problem) {
+        if (Boolean.TRUE.equals(problem.getInCatalog()) || problem.getInCatalog() == null) {
+            return;
+        }
+        String role = JwtAuthenticationFilter.getCurrentUserRole();
+        if ("ADMIN".equals(role)) {
+            return;
+        }
+        UUID userId;
+        try {
+            userId = JwtAuthenticationFilter.getCurrentUserId();
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This problem is private");
+        }
+        if (userId.equals(problem.getCreatedByUserId())) {
+            return;
+        }
+        if (playlistService.userCanAccessProblem(userId, problem.getId())) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This problem is private");
     }
 
     private void requireAdmin() {
