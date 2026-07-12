@@ -1,10 +1,13 @@
 package com.codex.platform.ai;
 
 import com.codex.platform.ai.dto.ProblemDraft;
+import com.codex.platform.common.util.SqlQueryNormalizer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -151,10 +154,31 @@ public class AiProblemService {
                 Return ONLY the JSON object.
                 """.formatted(name, notes == null || notes.isBlank() ? "(none)" : notes);
 
-        String text = geminiClient.generate(SYSTEM_INSTRUCTION, userPrompt, true);
+        boolean usedSearch = true;
+        String text;
+        try {
+            text = geminiClient.generate(SYSTEM_INSTRUCTION, userPrompt, true);
+        } catch (ResponseStatusException e) {
+            // Web-search grounding has its own, much stricter quota than plain
+            // generation on free-tier keys. Don't fail the whole request when only
+            // grounding is exhausted — fall back to the model's own knowledge.
+            if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                log.warn("Gemini search-grounded generation hit quota; retrying without web search: {}",
+                        e.getReason());
+                usedSearch = false;
+                text = geminiClient.generate(SYSTEM_INSTRUCTION, userPrompt, false);
+            } else {
+                throw e;
+            }
+        }
+
         ProblemDraft draft = geminiClient.extractJson(text, ProblemDraft.class);
         normalize(draft);
         verify(draft);
+        if (!usedSearch) {
+            draft.getMeta().getWarnings().add("Web search quota was exceeded, so this problem was generated from "
+                    + "the model's own knowledge instead of a live search — double-check facts and constraints.");
+        }
         return draft;
     }
 
@@ -185,6 +209,26 @@ public class AiProblemService {
         // No web search for edits — the model already has the full problem.
         String text = geminiClient.generate(SYSTEM_INSTRUCTION, userPrompt, false);
         ProblemDraft draft = geminiClient.extractJson(text, ProblemDraft.class);
+        normalize(draft);
+        verify(draft);
+        return draft;
+    }
+
+    /**
+     * Verify a hand-authored (non-AI) reference solution against hand-authored test
+     * cases, without going through Gemini. Used by the admin/playlist "Add manually"
+     * form to run a SQL reference query on real SQLite and fill in the expected
+     * output — same {@link #verify} path AI drafts go through, so a missing
+     * {@code ORDER BY} on a SQL query is auto-appended here too.
+     */
+    public ProblemDraft verifyManual(ProblemDraft.ReferenceSolution referenceSolution,
+                                     List<ProblemDraft.TestCaseDraft> testCases,
+                                     Integer timeLimitMs, Integer memoryLimitMb) {
+        ProblemDraft draft = new ProblemDraft();
+        draft.setReferenceSolution(referenceSolution);
+        draft.setTestCases(testCases != null ? new ArrayList<>(testCases) : new ArrayList<>());
+        draft.setTimeLimitMs(timeLimitMs);
+        draft.setMemoryLimitMb(memoryLimitMb);
         normalize(draft);
         verify(draft);
         return draft;
@@ -247,6 +291,15 @@ public class AiProblemService {
             return;
         }
 
+        if (isSqlLanguage(refLang)) {
+            SqlQueryNormalizer.Result normalized = SqlQueryNormalizer.ensureOrderBy(ref.getSourceCode());
+            if (normalized.appended()) {
+                ref.setSourceCode(normalized.sql());
+                meta.getWarnings().add("Reference query had no ORDER BY — appended \"ORDER BY 1\" automatically "
+                        + "so row order is deterministic and test cases pass consistently on SQLite.");
+            }
+        }
+
         List<String> inputs = draft.getTestCases().stream()
                 .map(tc -> tc.getInput() == null ? "" : tc.getInput())
                 .toList();
@@ -289,6 +342,14 @@ public class AiProblemService {
             meta.getWarnings().add(verified + "/" + draft.getTestCases().size()
                     + " test cases were verified by running the reference solution.");
         }
+    }
+
+    private static boolean isSqlLanguage(String name) {
+        if (name == null) return false;
+        return switch (name.trim().toLowerCase()) {
+            case "sql", "sqlite", "sqlite3", "mysql", "postgres", "postgresql" -> true;
+            default -> false;
+        };
     }
 
     private ProblemDraft cloneWithoutMeta(ProblemDraft current) throws Exception {

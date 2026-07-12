@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
@@ -123,6 +124,13 @@ public class GeminiClient {
                     .body(JsonNode.class);
         } catch (ResponseStatusException e) {
             throw e;
+        } catch (RestClientResponseException e) {
+            // Preserve the real upstream status (e.g. 429 quota exhaustion) instead of
+            // always collapsing it to 502, so callers can react to specific statuses
+            // (AiProblemService retries without search grounding on 429).
+            log.error("Gemini call failed: HTTP {} {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new ResponseStatusException(HttpStatus.valueOf(e.getStatusCode().value()),
+                    "Gemini request failed: " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             log.error("Gemini call failed: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
