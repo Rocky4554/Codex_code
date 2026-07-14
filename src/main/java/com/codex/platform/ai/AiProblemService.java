@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Orchestrates AI problem authoring:
@@ -117,6 +118,12 @@ public class AiProblemService {
               An empty result set means an empty expectedOutput string.
 
             Critical SQL rules:
+            - Every test case's "input" MUST include at least one INSERT statement per table,
+              with enough rows to meaningfully exercise the query (rows that both match and
+              don't match its filter, where applicable). Do NOT produce a schema-only test case
+              with no INSERTs unless the problem is specifically about an empty-table edge case
+              — and if so, say that explicitly in the test case (there is no dedicated field for
+              this, so make it obvious from context that it is intentional).
             - The reference query MUST end with an ORDER BY that fully determines the row
               order. Rows are compared as text line-by-line, so a query whose order is
               unspecified would be graded incorrectly. State the required ordering in the
@@ -322,6 +329,7 @@ public class AiProblemService {
 
         int verified = 0;
         List<String> outputs = vr.getOutputs();
+        boolean sql = isSqlLanguage(refLang);
         for (int i = 0; i < draft.getTestCases().size(); i++) {
             ProblemDraft.TestCaseDraft tc = draft.getTestCases().get(i);
             String produced = i < outputs.size() ? outputs.get(i) : null;
@@ -330,6 +338,19 @@ public class AiProblemService {
                 tc.setVerified(true);
                 tc.setNote(null);
                 verified++;
+
+                // "Ran cleanly" and "produced zero rows" both come back as an empty string,
+                // so a schema with no seed INSERTs looks identical to a legitimate empty-result
+                // case. Surface it as a warning instead of silently calling it Verified.
+                if (sql && produced.isBlank()) {
+                    boolean hasSeedData = tc.getInput() != null
+                            && tc.getInput().toUpperCase(Locale.ROOT).contains("INSERT");
+                    String reason = hasSeedData
+                            ? "the query matched zero rows"
+                            : "its input has no INSERT statements, so the table is empty";
+                    meta.getWarnings().add("Test case " + (i + 1) + " ran without errors but produced no output ("
+                            + reason + "). Confirm this is intentional before saving.");
+                }
             } else {
                 tc.setVerified(false);
                 tc.setNote("Reference solution did not run cleanly on this input; output is AI-generated.");
