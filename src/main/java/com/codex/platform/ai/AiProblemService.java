@@ -131,12 +131,26 @@ public class AiProblemService {
             - Use SQLite dialect ONLY. Do NOT use MySQL-only constructs such as DATE_FORMAT,
               IF(), IFNULL-as-IF, or backtick-quoted identifiers. Use SQLite equivalents:
               strftime(...) for dates, CASE WHEN ... THEN ... ELSE ... END instead of IF().
-            - The description MUST show the table schema (column names and types) so the user
-              knows what to query, and MUST state the required ordering.
+            - The description is rendered as Markdown (GitHub-flavored, tables supported), so
+              show the table schema as an ACTUAL Markdown table, not a prose sentence — a
+              header row, a "|---|---|" separator row, and 2-3 sample data rows with realistic
+              example values, one such table per table in the schema. Do not describe the
+              columns in a sentence instead of or in addition to the table. MUST also state the
+              required ordering as its own sentence after the table(s).
             - examples[] stay human-readable (a small table and the expected rows); they are
               for display only and are not executed.
 
             Example of a VALID SQL problem's pieces:
+              description (excerpt):
+                You are given a table `employees`:
+
+                | id | name | department |
+                |----|------|------------|
+                | 1 | Alice | Engineering |
+                | 2 | Bob | Sales |
+
+                Return the name of every employee in the Engineering department, ordered by
+                name ascending.
               testCases[0].input:
                 CREATE TABLE employees (id INTEGER, name TEXT, department TEXT);
                 INSERT INTO employees VALUES (1,'Alice','Engineering');
