@@ -46,6 +46,13 @@ public class User {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer totalScore = 0;
 
+    /**
+     * Bumped on password reset so every previously issued access JWT
+     * (which embeds this version) is rejected immediately.
+     */
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private Integer tokenVersion = 0;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

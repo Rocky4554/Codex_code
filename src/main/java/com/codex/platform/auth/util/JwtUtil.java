@@ -15,11 +15,16 @@ import java.util.UUID;
 @Component
 public class JwtUtil {
 
+    public static final String PURPOSE_PASSWORD_RESET = "password_reset";
+
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration}")
     private Long expiration;
+
+    @Value("${password-reset.jwt-ttl-ms:600000}")
+    private Long passwordResetTtlMs;
 
     @PostConstruct
     public void validateSecret() {
@@ -32,10 +37,8 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    /**
-     * Generate JWT token with userId claim
-     */
-    public String generateToken(UUID userId, String username, String role) {
+    /** Access token used for normal API auth. Embeds {@code tokenVersion} for global logout. */
+    public String generateToken(UUID userId, String username, String role, int tokenVersion) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
@@ -43,6 +46,24 @@ public class JwtUtil {
                 .subject(username)
                 .claim("userId", userId.toString())
                 .claim("role", role)
+                .claim("tokenVersion", tokenVersion)
+                .id(UUID.randomUUID().toString())
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /** Short-lived token issued only after OTP verification. */
+    public String generatePasswordResetToken(UUID userId, String jti) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + passwordResetTtlMs);
+
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("userId", userId.toString())
+                .claim("purpose", PURPOSE_PASSWORD_RESET)
+                .id(jti)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -54,24 +75,28 @@ public class JwtUtil {
         return role != null ? role : "USER";
     }
 
-    /**
-     * Extract username from token
-     */
     public String extractUsername(String token) {
         return extractClaims(token).getSubject();
     }
 
-    /**
-     * Extract userId from token
-     */
     public UUID extractUserId(String token) {
         String userIdStr = extractClaims(token).get("userId", String.class);
         return UUID.fromString(userIdStr);
     }
 
-    /**
-     * Validate token
-     */
+    public int extractTokenVersion(String token) {
+        Integer version = extractClaims(token).get("tokenVersion", Integer.class);
+        return version != null ? version : 0;
+    }
+
+    public String extractPurpose(String token) {
+        return extractClaims(token).get("purpose", String.class);
+    }
+
+    public String extractJti(String token) {
+        return extractClaims(token).getId();
+    }
+
     public boolean validateToken(String token) {
         try {
             Claims claims = extractClaims(token);
@@ -81,7 +106,15 @@ public class JwtUtil {
         }
     }
 
-    private Claims extractClaims(String token) {
+    public boolean isPasswordResetToken(String token) {
+        try {
+            return PURPOSE_PASSWORD_RESET.equals(extractPurpose(token)) && validateToken(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()

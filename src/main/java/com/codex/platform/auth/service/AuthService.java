@@ -21,7 +21,6 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        // Check if username or email already exists
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -29,32 +28,36 @@ public class AuthService {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        // Create new user
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setTokenVersion(0);
 
         User savedUser = userRepository.save(user);
 
-        // Generate JWT
-        String token = jwtUtil.generateToken(savedUser.getId(), savedUser.getUsername(), savedUser.getRole());
+        String token = jwtUtil.generateToken(
+                savedUser.getId(),
+                savedUser.getUsername(),
+                savedUser.getRole(),
+                savedUser.getTokenVersion() == null ? 0 : savedUser.getTokenVersion());
 
         return new AuthResponse(token, savedUser.getId(), savedUser.getUsername(), savedUser.getEmail(), savedUser.getRole());
     }
 
     public AuthResponse login(LoginRequest request) {
-        // Find user by username
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
 
-        // Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid username or password");
         }
 
-        // Generate JWT
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
+        String token = jwtUtil.generateToken(
+                user.getId(),
+                user.getUsername(),
+                user.getRole(),
+                user.getTokenVersion() == null ? 0 : user.getTokenVersion());
 
         return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail(), user.getRole());
     }

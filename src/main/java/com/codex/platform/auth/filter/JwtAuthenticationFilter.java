@@ -1,6 +1,8 @@
 package com.codex.platform.auth.filter;
 
 import com.codex.platform.auth.util.JwtUtil;
+import com.codex.platform.user.entity.User;
+import com.codex.platform.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,40 +24,46 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        // Extract JWT from Authorization header
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
             try {
-                if (jwtUtil.validateToken(token)) {
+                // Password-reset JWTs must not authenticate normal API calls
+                if (jwtUtil.validateToken(token) && !JwtUtil.PURPOSE_PASSWORD_RESET.equals(jwtUtil.extractPurpose(token))) {
                     String username = jwtUtil.extractUsername(token);
                     UUID userId = jwtUtil.extractUserId(token);
                     String role = jwtUtil.extractRole(token);
+                    int tokenVersion = jwtUtil.extractTokenVersion(token);
 
-                    Map<String, Object> principal = Map.of(
-                            "username", username,
-                            "userId", userId,
-                            "role", role);
+                    // Reject tokens issued before a password reset (global logout)
+                    User user = userRepository.findById(userId).orElse(null);
+                    int currentVersion = user == null || user.getTokenVersion() == null ? 0 : user.getTokenVersion();
+                    if (user != null && tokenVersion == currentVersion) {
+                        Map<String, Object> principal = Map.of(
+                                "username", username,
+                                "userId", userId,
+                                "role", role,
+                                "tokenVersion", tokenVersion);
 
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            principal,
-                            null,
-                            new ArrayList<>());
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                principal,
+                                null,
+                                new ArrayList<>());
 
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
                 }
             } catch (Exception e) {
-                // Invalid token - continue without authentication
                 logger.error("JWT validation failed: " + e.getMessage());
             }
         }
@@ -63,10 +71,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Utility: extract userId from the current SecurityContext.
-     * Call this from any service or controller instead of re-parsing the JWT.
-     */
     @SuppressWarnings("unchecked")
     public static UUID getCurrentUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
