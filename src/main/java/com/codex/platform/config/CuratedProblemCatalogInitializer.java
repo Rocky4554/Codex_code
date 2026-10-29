@@ -36,6 +36,7 @@ public class CuratedProblemCatalogInitializer {
     private final ObjectMapper objectMapper;
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(10)
     @Transactional
     public void onApplicationReady() throws Exception {
         int upserted = 0;

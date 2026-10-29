@@ -1,0 +1,366 @@
+[
+ {
+  "title": "Combine Two Tables",
+  "difficulty": "EASY",
+  "description": "Given the `person` and `address` tables, report the first name, last name, city and state of **every** person. If a person has no address, report `NULL` for city and state.\n\n**Table: `person`**\n\n| Column Name | Type |\n| --- | --- |\n| personId | INTEGER |\n| lastName | TEXT |\n| firstName | TEXT |\n\n`personId` is the primary key of this table.\n\n**Table: `address`**\n\n| Column Name | Type |\n| --- | --- |\n| addressId | INTEGER |\n| personId | INTEGER |\n| city | TEXT |\n| state | TEXT |\n\n`addressId` is the primary key of this table.\n\nReturn `firstName`, `lastName`, `city`, `state`, ordered by `personId` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`person` table:\n\n| personId | lastName | firstName |\n| --- | --- | --- |\n| 1 | Wang | Allen |\n| 2 | Alice | Bob |\n\n`address` table:\n\n| addressId | personId | city | state |\n| --- | --- | --- | --- |\n| 1 | 2 | New York City | New York |\n| 2 | 3 | Leetcode | California |\n\n**Output:**\n\n| firstName | lastName | city | state |\n| --- | --- | --- | --- |\n| Allen | Wang | null | null |\n| Bob | Alice | New York City | New York |\n\n**Explanation:** Allen has no address row, so his city and state are null.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Joins",
+   "Left Join"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE person (personId INTEGER PRIMARY KEY, lastName TEXT, firstName TEXT);\nCREATE TABLE address (addressId INTEGER PRIMARY KEY, personId INTEGER, city TEXT, state TEXT);\nINSERT INTO person VALUES (1,'Wang','Allen'),(2,'Alice','Bob');\nINSERT INTO address VALUES (1,2,'New York City','New York'),(2,3,'Leetcode','California');",
+    "expectedOutput": "Allen|Wang||\nBob|Alice|New York City|New York",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE person (personId INTEGER PRIMARY KEY, lastName TEXT, firstName TEXT);\nCREATE TABLE address (addressId INTEGER PRIMARY KEY, personId INTEGER, city TEXT, state TEXT);\nINSERT INTO person VALUES (1,'Lee','Ann'),(2,'Ng','Bo'),(3,'Roy','Cy');\nINSERT INTO address VALUES (1,1,'Austin','Texas'),(2,3,'Reno','Nevada');",
+    "expectedOutput": "Ann|Lee|Austin|Texas\nBo|Ng||\nCy|Roy|Reno|Nevada",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Employees Earning More Than Their Managers",
+  "difficulty": "EASY",
+  "description": "The `employee` table holds every employee and the `id` of their manager (`managerId`, null for the boss).\n\n**Table: `employee`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| name | TEXT |\n| salary | INTEGER |\n| managerId | INTEGER |\n\n`id` is the primary key of this table.\n\nFind the employees who earn **more than their manager**. Return one column, `name`, ordered by `name` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`employee` table:\n\n| id | name | salary | managerId |\n| --- | --- | --- | --- |\n| 1 | Joe | 70000 | 3 |\n| 2 | Henry | 80000 | 4 |\n| 3 | Sam | 60000 | null |\n| 4 | Max | 90000 | null |\n\n**Output:**\n\n| name |\n| --- |\n| Joe |\n\n**Explanation:** Joe earns 70000 which is more than his manager Sam (60000).\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Joins",
+   "Self Join"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT, salary INTEGER, managerId INTEGER);\nINSERT INTO employee VALUES (1,'Joe',70000,3),(2,'Henry',80000,4),(3,'Sam',60000,NULL),(4,'Max',90000,NULL);",
+    "expectedOutput": "Joe",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT, salary INTEGER, managerId INTEGER);\nINSERT INTO employee VALUES (1,'Zed',50,2),(2,'Amy',40,NULL),(3,'Bea',45,2),(4,'Cat',99,3),(5,'Dan',10,3);",
+    "expectedOutput": "Bea\nCat\nZed",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Duplicate Emails",
+  "difficulty": "EASY",
+  "description": "The `person` table stores one email per row. Emails are lower-case.\n\n**Table: `person`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| email | TEXT |\n\n`id` is the primary key of this table.\n\nReport every email that appears **more than once**. Return one column, `email`, ordered by `email` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`person` table:\n\n| id | email |\n| --- | --- |\n| 1 | a@x.com |\n| 2 | b@x.com |\n| 3 | a@x.com |\n\n**Output:**\n\n| email |\n| --- |\n| a@x.com |\n\n**Explanation:** a@x.com appears twice.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Aggregation",
+   "Group By"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE person (id INTEGER PRIMARY KEY, email TEXT);\nINSERT INTO person VALUES (1,'a@x.com'),(2,'b@x.com'),(3,'a@x.com');",
+    "expectedOutput": "a@x.com",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE person (id INTEGER PRIMARY KEY, email TEXT);\nINSERT INTO person VALUES (1,'z@z.io'),(2,'m@m.io'),(3,'z@z.io'),(4,'m@m.io'),(5,'q@q.io'),(6,'z@z.io');",
+    "expectedOutput": "m@m.io\nz@z.io",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Customers Who Never Order",
+  "difficulty": "EASY",
+  "description": "A shop keeps its `customers` and the `orders` they placed.\n\n**Table: `customers`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| name | TEXT |\n\n`id` is the primary key of this table.\n\n**Table: `orders`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| customerId | INTEGER |\n\n`id` is the primary key of this table.\n\nFind all customers who **never placed an order**. Return one column, `Customers`, ordered by name ascending.\n\n**Example 1:**\n\n**Input:**\n\n`customers` table:\n\n| id | name |\n| --- | --- |\n| 1 | Joe |\n| 2 | Henry |\n| 3 | Sam |\n| 4 | Max |\n\n`orders` table:\n\n| id | customerId |\n| --- | --- |\n| 1 | 3 |\n| 2 | 1 |\n\n**Output:**\n\n| Customers |\n| --- |\n| Henry |\n| Max |\n\n**Explanation:** Henry and Max never ordered.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Joins",
+   "Subquery"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customerId INTEGER);\nINSERT INTO customers VALUES (1,'Joe'),(2,'Henry'),(3,'Sam'),(4,'Max');\nINSERT INTO orders VALUES (1,3),(2,1);",
+    "expectedOutput": "Henry\nMax",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customerId INTEGER);\nINSERT INTO customers VALUES (1,'Ann'),(2,'Bob'),(3,'Cid');\nINSERT INTO orders VALUES (1,2),(2,2),(3,2);",
+    "expectedOutput": "Ann\nCid",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Employee Bonus",
+  "difficulty": "EASY",
+  "description": "`employee` lists staff; `bonus` lists the bonus some of them received.\n\n**Table: `employee`**\n\n| Column Name | Type |\n| --- | --- |\n| empId | INTEGER |\n| name | TEXT |\n| supervisor | INTEGER |\n| salary | INTEGER |\n\n`empId` is the primary key of this table.\n\n**Table: `bonus`**\n\n| Column Name | Type |\n| --- | --- |\n| empId | INTEGER |\n| bonus | INTEGER |\n\n`empId` is the primary key of this table.\n\nReport the `name` and `bonus` of every employee whose bonus is **less than 1000 or missing** (NULL). Order by `name` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`employee` table:\n\n| empId | name | supervisor | salary |\n| --- | --- | --- | --- |\n| 1 | John | 3 | 1000 |\n| 2 | Dan | 3 | 2000 |\n| 3 | Brad | null | 4000 |\n| 4 | Thomas | 3 | 4000 |\n\n`bonus` table:\n\n| empId | bonus |\n| --- | --- |\n| 2 | 500 |\n| 4 | 2000 |\n\n**Output:**\n\n| name | bonus |\n| --- | --- |\n| Brad | null |\n| Dan | 500 |\n| John | null |\n\n**Explanation:** Brad and John have no bonus row and Dan's bonus is 500; Thomas received 2000 so he is excluded.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Joins",
+   "Left Join"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE employee (empId INTEGER PRIMARY KEY, name TEXT, supervisor INTEGER, salary INTEGER);\nCREATE TABLE bonus (empId INTEGER PRIMARY KEY, bonus INTEGER);\nINSERT INTO employee VALUES (3,'Brad',NULL,4000),(1,'John',3,1000),(2,'Dan',3,2000),(4,'Thomas',3,4000);\nINSERT INTO bonus VALUES (2,500),(4,2000);",
+    "expectedOutput": "Brad|\nDan|500\nJohn|",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE employee (empId INTEGER PRIMARY KEY, name TEXT, supervisor INTEGER, salary INTEGER);\nCREATE TABLE bonus (empId INTEGER PRIMARY KEY, bonus INTEGER);\nINSERT INTO employee VALUES (1,'Eve',NULL,1),(2,'Abe',1,1),(3,'Cal',1,1);\nINSERT INTO bonus VALUES (1,999),(2,1000),(3,5000);",
+    "expectedOutput": "Eve|999",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Customer Order Totals",
+  "difficulty": "EASY",
+  "description": "The `orders` table records the `amount` of every order a `customer` placed.\n\n**Table: `orders`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| customer | TEXT |\n| amount | INTEGER |\n\n`id` is the primary key of this table.\n\nFor each customer report `customer`, the number of orders as `orders`, and the total spent as `total`. Order by `total` descending, then `customer` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`orders` table:\n\n| id | customer | amount |\n| --- | --- | --- |\n| 1 | Ann | 50 |\n| 2 | Bob | 20 |\n| 3 | Ann | 70 |\n| 4 | Cid | 120 |\n\n**Output:**\n\n| customer | orders | total |\n| --- | --- | --- |\n| Ann | 2 | 120 |\n| Cid | 1 | 120 |\n| Bob | 1 | 20 |\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Aggregation",
+   "Group By"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE orders (id INTEGER PRIMARY KEY, customer TEXT, amount INTEGER);\nINSERT INTO orders VALUES (1,'Ann',50),(2,'Bob',20),(3,'Ann',70),(4,'Cid',120);",
+    "expectedOutput": "Ann|2|120\nCid|1|120\nBob|1|20",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE orders (id INTEGER PRIMARY KEY, customer TEXT, amount INTEGER);\nINSERT INTO orders VALUES (1,'X',5),(2,'Y',5),(3,'Z',9),(4,'X',1);",
+    "expectedOutput": "Z|1|9\nX|2|6\nY|1|5",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Rising Temperature",
+  "difficulty": "EASY",
+  "description": "The `weather` table has one temperature reading per day (`recordDate` is an ISO date, `YYYY-MM-DD`).\n\n**Table: `weather`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| recordDate | TEXT |\n| temperature | INTEGER |\n\n`id` is the primary key of this table.\n\nFind the `id` of every day whose temperature was **higher than the previous calendar day**. Return one column, `id`, ordered by `id` ascending. (Hint: SQLite has `date(x, '-1 day')`.)\n\n**Example 1:**\n\n**Input:**\n\n`weather` table:\n\n| id | recordDate | temperature |\n| --- | --- | --- |\n| 1 | 2015-01-01 | 10 |\n| 2 | 2015-01-02 | 25 |\n| 3 | 2015-01-03 | 20 |\n| 4 | 2015-01-04 | 30 |\n\n**Output:**\n\n| id |\n| --- |\n| 2 |\n| 4 |\n\n**Explanation:** 2015-01-02 (25 > 10) and 2015-01-04 (30 > 20) are warmer than the day before.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Joins",
+   "Self Join",
+   "Date Functions"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE weather (id INTEGER PRIMARY KEY, recordDate TEXT, temperature INTEGER);\nINSERT INTO weather VALUES (1,'2015-01-01',10),(2,'2015-01-02',25),(3,'2015-01-03',20),(4,'2015-01-04',30);",
+    "expectedOutput": "2\n4",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE weather (id INTEGER PRIMARY KEY, recordDate TEXT, temperature INTEGER);\nINSERT INTO weather VALUES (1,'2020-02-28',5),(2,'2020-02-29',6),(3,'2020-03-02',50),(4,'2020-03-01',9);",
+    "expectedOutput": "2\n3\n4",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Second Highest Salary",
+  "difficulty": "MEDIUM",
+  "description": "The `employee` table lists salaries. Several employees can share a salary.\n\n**Table: `employee`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| salary | INTEGER |\n\n`id` is the primary key of this table.\n\nReport the **second highest distinct salary** as a single column named `SecondHighestSalary`. (Every dataset here contains at least two distinct salaries.)\n\n**Example 1:**\n\n**Input:**\n\n`employee` table:\n\n| id | salary |\n| --- | --- |\n| 1 | 100 |\n| 2 | 200 |\n| 3 | 300 |\n\n**Output:**\n\n| SecondHighestSalary |\n| --- |\n| 200 |\n\n**Explanation:** Distinct salaries are 300, 200, 100; the second highest is 200.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Subquery",
+   "Ranking"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE employee (id INTEGER PRIMARY KEY, salary INTEGER);\nINSERT INTO employee VALUES (1,100),(2,200),(3,300);",
+    "expectedOutput": "200",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE employee (id INTEGER PRIMARY KEY, salary INTEGER);\nINSERT INTO employee VALUES (1,50),(2,50),(3,70),(4,70),(5,10);",
+    "expectedOutput": "50",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Department Highest Salary",
+  "difficulty": "MEDIUM",
+  "description": "`employee` rows belong to a `department`.\n\n**Table: `department`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| name | TEXT |\n\n`id` is the primary key of this table.\n\n**Table: `employee`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| name | TEXT |\n| salary | INTEGER |\n| departmentId | INTEGER |\n\n`id` is the primary key of this table.\n\nFor every department, find the employee(s) with the **highest salary** (include all ties). Return `Department`, `Employee`, `Salary`, ordered by `Department` then `Employee` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`department` table:\n\n| id | name |\n| --- | --- |\n| 1 | IT |\n| 2 | Sales |\n\n`employee` table:\n\n| id | name | salary | departmentId |\n| --- | --- | --- | --- |\n| 1 | Joe | 70000 | 1 |\n| 2 | Jim | 90000 | 1 |\n| 3 | Henry | 80000 | 2 |\n| 4 | Sam | 60000 | 2 |\n| 5 | Max | 90000 | 1 |\n\n**Output:**\n\n| Department | Employee | Salary |\n| --- | --- | --- |\n| IT | Jim | 90000 |\n| IT | Max | 90000 |\n| Sales | Henry | 80000 |\n\n**Explanation:** Max and Jim tie for the top IT salary, so both appear.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Joins",
+   "Subquery"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE department (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT, salary INTEGER, departmentId INTEGER);\nINSERT INTO department VALUES (1,'IT'),(2,'Sales');\nINSERT INTO employee VALUES (1,'Joe',70000,1),(2,'Jim',90000,1),(3,'Henry',80000,2),(4,'Sam',60000,2),(5,'Max',90000,1);",
+    "expectedOutput": "IT|Jim|90000\nIT|Max|90000\nSales|Henry|80000",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE department (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT, salary INTEGER, departmentId INTEGER);\nINSERT INTO department VALUES (1,'HR'),(2,'Ops'),(3,'Dev');\nINSERT INTO employee VALUES (1,'A',10,1),(2,'B',20,2),(3,'C',20,2),(4,'D',5,3),(5,'E',7,3);",
+    "expectedOutput": "Dev|E|7\nHR|A|10\nOps|B|20\nOps|C|20",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Rank Scores",
+  "difficulty": "MEDIUM",
+  "description": "The `scores` table holds game scores (with two decimal places).\n\n**Table: `scores`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| score | REAL |\n\n`id` is the primary key of this table.\n\nRank the scores from highest to lowest. Equal scores share a rank and the next rank is the **next integer** (no gaps, i.e. `DENSE_RANK`). Return `score` and `rank`, ordered by `score` descending.\n\n**Example 1:**\n\n**Input:**\n\n`scores` table:\n\n| id | score |\n| --- | --- |\n| 1 | 3.5 |\n| 2 | 3.65 |\n| 3 | 4.0 |\n| 4 | 3.85 |\n| 5 | 4.0 |\n| 6 | 3.65 |\n\n**Output:**\n\n| score | rank |\n| --- | --- |\n| 4.0 | 1 |\n| 4.0 | 1 |\n| 3.85 | 2 |\n| 3.65 | 3 |\n| 3.65 | 3 |\n| 3.5 | 4 |\n\n**Explanation:** 4.00 appears twice and both get rank 1; 3.85 follows with rank 2 (no gap).\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Window Functions",
+   "Ranking"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE scores (id INTEGER PRIMARY KEY, score REAL);\nINSERT INTO scores VALUES (1,3.50),(2,3.65),(3,4.00),(4,3.85),(5,4.00),(6,3.65);",
+    "expectedOutput": "4.0|1\n4.0|1\n3.85|2\n3.65|3\n3.65|3\n3.5|4",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE scores (id INTEGER PRIMARY KEY, score REAL);\nINSERT INTO scores VALUES (1,1.5),(2,2.5),(3,1.5),(4,0.5);",
+    "expectedOutput": "2.5|1\n1.5|2\n1.5|2\n0.5|3",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Consecutive Numbers",
+  "difficulty": "MEDIUM",
+  "description": "The `logs` table records a number per row; `id` increases with time.\n\n**Table: `logs`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| num | INTEGER |\n\n`id` is the primary key of this table.\n\nFind every `num` that appears **at least three times in a row** (three consecutive ids). Return distinct values as `ConsecutiveNums`, ordered ascending.\n\n**Example 1:**\n\n**Input:**\n\n`logs` table:\n\n| id | num |\n| --- | --- |\n| 1 | 1 |\n| 2 | 1 |\n| 3 | 1 |\n| 4 | 2 |\n| 5 | 1 |\n| 6 | 2 |\n| 7 | 2 |\n\n**Output:**\n\n| ConsecutiveNums |\n| --- |\n| 1 |\n\n**Explanation:** 1 appears on ids 1, 2 and 3.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Window Functions",
+   "Self Join"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE logs (id INTEGER PRIMARY KEY, num INTEGER);\nINSERT INTO logs VALUES (1,1),(2,1),(3,1),(4,2),(5,1),(6,2),(7,2);",
+    "expectedOutput": "1",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE logs (id INTEGER PRIMARY KEY, num INTEGER);\nINSERT INTO logs VALUES (1,5),(2,5),(3,5),(4,5),(5,3),(6,9),(7,9),(8,9),(9,4);",
+    "expectedOutput": "5\n9",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Managers With At Least 5 Direct Reports",
+  "difficulty": "MEDIUM",
+  "description": "`employee.managerId` points at the `id` of an employee's direct manager.\n\n**Table: `employee`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| name | TEXT |\n| department | TEXT |\n| managerId | INTEGER |\n\n`id` is the primary key of this table.\n\nFind the managers who have **at least five direct reports**. Return one column, `name`, ordered by `name` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`employee` table:\n\n| id | name | department | managerId |\n| --- | --- | --- | --- |\n| 101 | John | A | null |\n| 102 | Dan | A | 101 |\n| 103 | James | A | 101 |\n| 104 | Amy | A | 101 |\n| 105 | Anne | A | 101 |\n| 106 | Ron | B | 101 |\n\n**Output:**\n\n| name |\n| --- |\n| John |\n\n**Explanation:** John manages Dan, James, Amy, Anne and Ron.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Joins",
+   "Self Join",
+   "Group By"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT, department TEXT, managerId INTEGER);\nINSERT INTO employee VALUES (101,'John','A',NULL),(102,'Dan','A',101),(103,'James','A',101),(104,'Amy','A',101),(105,'Anne','A',101),(106,'Ron','B',101);",
+    "expectedOutput": "John",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT, department TEXT, managerId INTEGER);\nINSERT INTO employee VALUES (1,'Zoe','X',NULL),(2,'Yan','X',1),(3,'Xia','X',1),(4,'Wes','X',1),(5,'Vic','X',1),(6,'Uma','X',1),(7,'Tom','X',2),(8,'Sue','X',2),(9,'Rae','X',2),(10,'Pat','X',2);",
+    "expectedOutput": "Zoe",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Department Top Three Salaries",
+  "difficulty": "HARD",
+  "description": "A company's high earners are the employees with one of the **three highest distinct salaries** in their department.\n\n**Table: `department`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| name | TEXT |\n\n`id` is the primary key of this table.\n\n**Table: `employee`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| name | TEXT |\n| salary | INTEGER |\n| departmentId | INTEGER |\n\n`id` is the primary key of this table.\n\nReturn `Department`, `Employee`, `Salary` for every high earner (ties share a rank, so more than three people can qualify). Order by `Department` ascending, `Salary` descending, then `Employee` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`department` table:\n\n| id | name |\n| --- | --- |\n| 1 | IT |\n| 2 | Sales |\n\n`employee` table:\n\n| id | name | salary | departmentId |\n| --- | --- | --- | --- |\n| 1 | Joe | 85000 | 1 |\n| 2 | Henry | 80000 | 2 |\n| 3 | Sam | 60000 | 2 |\n| 4 | Max | 90000 | 1 |\n| 5 | Janet | 69000 | 1 |\n| 6 | Randy | 85000 | 1 |\n| 7 | Will | 70000 | 1 |\n\n**Output:**\n\n| Department | Employee | Salary |\n| --- | --- | --- |\n| IT | Max | 90000 |\n| IT | Joe | 85000 |\n| IT | Randy | 85000 |\n| IT | Will | 70000 |\n| Sales | Henry | 80000 |\n| Sales | Sam | 60000 |\n\n**Explanation:** In IT, 85000 is shared by Max and Henry and the third distinct salary is 70000, so Janet (69000) is excluded.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Window Functions",
+   "Ranking",
+   "Joins"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE department (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT, salary INTEGER, departmentId INTEGER);\nINSERT INTO department VALUES (1,'IT'),(2,'Sales');\nINSERT INTO employee VALUES (1,'Joe',85000,1),(2,'Henry',80000,2),(3,'Sam',60000,2),(4,'Max',90000,1),(5,'Janet',69000,1),(6,'Randy',85000,1),(7,'Will',70000,1);",
+    "expectedOutput": "IT|Max|90000\nIT|Joe|85000\nIT|Randy|85000\nIT|Will|70000\nSales|Henry|80000\nSales|Sam|60000",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE department (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT, salary INTEGER, departmentId INTEGER);\nINSERT INTO department VALUES (1,'Ops');\nINSERT INTO employee VALUES (1,'A',10,1),(2,'B',20,1),(3,'C',30,1),(4,'D',40,1),(5,'E',40,1);",
+    "expectedOutput": "Ops|D|40\nOps|E|40\nOps|C|30\nOps|B|20",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Daily Running Total",
+  "difficulty": "MEDIUM",
+  "description": "The `sales` table has one row per `day` with that day's `amount`.\n\n**Table: `sales`**\n\n| Column Name | Type |\n| --- | --- |\n| day | TEXT |\n| amount | INTEGER |\n\nReport each `day`, its `amount`, and the **cumulative total** up to and including that day as `running_total`. Order by `day` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`sales` table:\n\n| day | amount |\n| --- | --- |\n| 2024-01-01 | 10 |\n| 2024-01-02 | 20 |\n| 2024-01-03 | 5 |\n\n**Output:**\n\n| day | amount | running_total |\n| --- | --- | --- |\n| 2024-01-01 | 10 | 10 |\n| 2024-01-02 | 20 | 30 |\n| 2024-01-03 | 5 | 35 |\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Window Functions",
+   "Aggregation"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE sales (day TEXT, amount INTEGER);\nINSERT INTO sales VALUES ('2024-01-01',10),('2024-01-02',20),('2024-01-03',5);",
+    "expectedOutput": "2024-01-01|10|10\n2024-01-02|20|30\n2024-01-03|5|35",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE sales (day TEXT, amount INTEGER);\nINSERT INTO sales VALUES ('2024-05-03',7),('2024-05-01',1),('2024-05-02',2),('2024-05-04',100);",
+    "expectedOutput": "2024-05-01|1|1\n2024-05-02|2|3\n2024-05-03|7|10\n2024-05-04|100|110",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Best Selling Categories",
+  "difficulty": "MEDIUM",
+  "description": "`sales` rows reference the `products` that were sold and the `quantity`.\n\n**Table: `products`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| name | TEXT |\n| category | TEXT |\n\n`id` is the primary key of this table.\n\n**Table: `sales`**\n\n| Column Name | Type |\n| --- | --- |\n| id | INTEGER |\n| productId | INTEGER |\n| quantity | INTEGER |\n\n`id` is the primary key of this table.\n\nFor each category with **more than 10 units sold in total**, report `category` and `units` (the total quantity). Order by `units` descending, then `category` ascending.\n\n**Example 1:**\n\n**Input:**\n\n`products` table:\n\n| id | name | category |\n| --- | --- | --- |\n| 1 | Novel | Books |\n| 2 | Atlas | Books |\n| 3 | Robot | Toys |\n| 4 | Chess | Games |\n\n`sales` table:\n\n| id | productId | quantity |\n| --- | --- | --- |\n| 1 | 1 | 10 |\n| 2 | 2 | 5 |\n| 3 | 3 | 12 |\n| 4 | 4 | 4 |\n\n**Output:**\n\n| category | units |\n| --- | --- |\n| Books | 15 |\n| Toys | 12 |\n\n**Explanation:** Books sold 15 units and Toys 12; Games sold only 4 so it is filtered out.\n\n---\n\n**Notes:** Dialect is **SQLite**. Results are compared row by row, so use the `ORDER BY` described above and return columns in the order shown. `NULL` values print as empty. Submit a single `SELECT` statement; the tables are created for you.",
+  "topics": [
+   "SQL",
+   "Joins",
+   "Aggregation",
+   "Group By"
+  ],
+  "constraints": [],
+  "examples": [],
+  "testCases": [
+   {
+    "input": "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, category TEXT);\nCREATE TABLE sales (id INTEGER PRIMARY KEY, productId INTEGER, quantity INTEGER);\nINSERT INTO products VALUES (1,'Novel','Books'),(2,'Atlas','Books'),(3,'Robot','Toys'),(4,'Chess','Games');\nINSERT INTO sales VALUES (1,1,10),(2,2,5),(3,3,12),(4,4,4);",
+    "expectedOutput": "Books|15\nToys|12",
+    "sample": true
+   },
+   {
+    "input": "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, category TEXT);\nCREATE TABLE sales (id INTEGER PRIMARY KEY, productId INTEGER, quantity INTEGER);\nINSERT INTO products VALUES (1,'P','Z'),(2,'Q','A'),(3,'R','M');\nINSERT INTO sales VALUES (1,1,6),(2,2,6),(3,3,11),(4,1,6);",
+    "expectedOutput": "Z|12\nM|11",
+    "sample": false
+   }
+  ]
+ }
+]

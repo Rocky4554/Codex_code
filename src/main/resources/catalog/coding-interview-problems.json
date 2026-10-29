@@ -1,0 +1,989 @@
+[
+ {
+  "title": "Best Time to Buy and Sell Stock",
+  "difficulty": "EASY",
+  "description": "Given daily stock prices, choose one day to buy and a **later** day to sell to maximise profit.\n\n**Input:** one line of space-separated prices.\n**Output:** the maximum profit, or `0` if no profit is possible.",
+  "topics": [
+   "Array",
+   "Greedy",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 10^5",
+   "0 <= price <= 10^4"
+  ],
+  "examples": [
+   {
+    "input": "7 1 5 3 6 4",
+    "output": "5",
+    "explanation": "Buy at 1, sell at 6."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "7 1 5 3 6 4",
+    "expectedOutput": "5",
+    "sample": true
+   },
+   {
+    "input": "7 6 4 3 1",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "2 4 1",
+    "expectedOutput": "2",
+    "sample": false
+   },
+   {
+    "input": "5",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "3 3 3",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "1 2 3 4 5 0 10",
+    "expectedOutput": "10",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Maximum Subarray",
+  "difficulty": "MEDIUM",
+  "description": "Find the contiguous subarray with the largest sum and print that sum (Kadane's algorithm).\n\n**Input:** one line of space-separated integers.\n**Output:** the maximum subarray sum.",
+  "topics": [
+   "Array",
+   "DP",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 10^5"
+  ],
+  "examples": [
+   {
+    "input": "-2 1 -3 4 -1 2 1 -5 4",
+    "output": "6",
+    "explanation": "The subarray `4 -1 2 1` has sum 6."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "-2 1 -3 4 -1 2 1 -5 4",
+    "expectedOutput": "6",
+    "sample": true
+   },
+   {
+    "input": "1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "-3 -2 -5",
+    "expectedOutput": "-2",
+    "sample": false
+   },
+   {
+    "input": "5 4 -1 7 8",
+    "expectedOutput": "23",
+    "sample": false
+   },
+   {
+    "input": "-1 2 -1 2",
+    "expectedOutput": "3",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Contains Duplicate",
+  "difficulty": "EASY",
+  "description": "Print `true` if any value appears at least twice, otherwise `false`.\n\n**Input:** one line of space-separated integers.",
+  "topics": [
+   "Array",
+   "Hash Set",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 10^5"
+  ],
+  "examples": [
+   {
+    "input": "1 2 3 1",
+    "output": "true",
+    "explanation": "1 appears twice."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "1 2 3 1",
+    "expectedOutput": "true",
+    "sample": true
+   },
+   {
+    "input": "1 2 3 4",
+    "expectedOutput": "false",
+    "sample": false
+   },
+   {
+    "input": "7",
+    "expectedOutput": "false",
+    "sample": false
+   },
+   {
+    "input": "5 5",
+    "expectedOutput": "true",
+    "sample": false
+   },
+   {
+    "input": "10 20 30 40 10",
+    "expectedOutput": "true",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Climbing Stairs",
+  "difficulty": "EASY",
+  "description": "You climb a staircase of `n` steps taking 1 or 2 steps at a time. Print the number of distinct ways to reach the top.\n\n**Input:** a single integer `n`.",
+  "topics": [
+   "DP",
+   "Math",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 45"
+  ],
+  "examples": [
+   {
+    "input": "3",
+    "output": "3",
+    "explanation": "1+1+1, 1+2, 2+1."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "3",
+    "expectedOutput": "3",
+    "sample": true
+   },
+   {
+    "input": "1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "2",
+    "expectedOutput": "2",
+    "sample": false
+   },
+   {
+    "input": "5",
+    "expectedOutput": "8",
+    "sample": false
+   },
+   {
+    "input": "10",
+    "expectedOutput": "89",
+    "sample": false
+   },
+   {
+    "input": "45",
+    "expectedOutput": "1836311903",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Single Number",
+  "difficulty": "EASY",
+  "description": "Every value appears twice except one. Print the value that appears once. Aim for O(n) time and O(1) extra space (XOR).\n\n**Input:** one line of space-separated integers.",
+  "topics": [
+   "Array",
+   "Bit Manipulation",
+   "Interview"
+  ],
+  "constraints": [
+   "n is odd"
+  ],
+  "examples": [
+   {
+    "input": "4 1 2 1 2",
+    "output": "4",
+    "explanation": "Only 4 is unpaired."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "4 1 2 1 2",
+    "expectedOutput": "4",
+    "sample": true
+   },
+   {
+    "input": "1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "2 2 1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "-3 5 5",
+    "expectedOutput": "-3",
+    "sample": false
+   },
+   {
+    "input": "9 8 9 7 7",
+    "expectedOutput": "8",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Majority Element",
+  "difficulty": "EASY",
+  "description": "Print the element that appears more than `n/2` times. It is guaranteed to exist.\n\n**Input:** one line of space-separated integers.",
+  "topics": [
+   "Array",
+   "Hash Map",
+   "Interview"
+  ],
+  "constraints": [
+   "A majority element always exists"
+  ],
+  "examples": [
+   {
+    "input": "2 2 1 1 1 2 2",
+    "output": "2",
+    "explanation": "2 appears 4 of 7 times."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "2 2 1 1 1 2 2",
+    "expectedOutput": "2",
+    "sample": true
+   },
+   {
+    "input": "3",
+    "expectedOutput": "3",
+    "sample": false
+   },
+   {
+    "input": "3 2 3",
+    "expectedOutput": "3",
+    "sample": false
+   },
+   {
+    "input": "1 1 1 2",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "5 6 5 6 5",
+    "expectedOutput": "5",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Product of Array Except Self",
+  "difficulty": "MEDIUM",
+  "description": "For each index print the product of every other element, **without using division**.\n\n**Input:** one line of space-separated integers.\n**Output:** the resulting array, space separated.",
+  "topics": [
+   "Array",
+   "Prefix Sum",
+   "Interview"
+  ],
+  "constraints": [
+   "2 <= n <= 10^5",
+   "Products fit in 64 bits"
+  ],
+  "examples": [
+   {
+    "input": "1 2 3 4",
+    "output": "24 12 8 6",
+    "explanation": "24 12 8 6"
+   }
+  ],
+  "testCases": [
+   {
+    "input": "1 2 3 4",
+    "expectedOutput": "24 12 8 6",
+    "sample": true
+   },
+   {
+    "input": "2 3",
+    "expectedOutput": "3 2",
+    "sample": false
+   },
+   {
+    "input": "-1 1 0 -3 3",
+    "expectedOutput": "0 0 9 0 0",
+    "sample": false
+   },
+   {
+    "input": "0 0 2",
+    "expectedOutput": "0 0 0",
+    "sample": false
+   },
+   {
+    "input": "5 1 1",
+    "expectedOutput": "1 5 5",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Longest Substring Without Repeating Characters",
+  "difficulty": "MEDIUM",
+  "description": "Print the length of the longest substring that has no repeated character.\n\n**Input:** one line containing the string (may be empty).",
+  "topics": [
+   "String",
+   "Sliding Window",
+   "Hash Map",
+   "Interview"
+  ],
+  "constraints": [
+   "0 <= length <= 5*10^4"
+  ],
+  "examples": [
+   {
+    "input": "abcabcbb",
+    "output": "3",
+    "explanation": "`abc` has length 3."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "abcabcbb",
+    "expectedOutput": "3",
+    "sample": true
+   },
+   {
+    "input": "bbbbb",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "pwwkew",
+    "expectedOutput": "3",
+    "sample": false
+   },
+   {
+    "input": "a",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "dvdf",
+    "expectedOutput": "3",
+    "sample": false
+   },
+   {
+    "input": "abba",
+    "expectedOutput": "2",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Container With Most Water",
+  "difficulty": "MEDIUM",
+  "description": "Given line heights, pick two lines that together with the x-axis hold the most water. Print the maximum area.\n\n**Input:** one line of space-separated heights.",
+  "topics": [
+   "Array",
+   "Two Pointers",
+   "Interview"
+  ],
+  "constraints": [
+   "2 <= n <= 10^5"
+  ],
+  "examples": [
+   {
+    "input": "1 8 6 2 5 4 8 3 7",
+    "output": "49",
+    "explanation": "Lines of height 8 and 7 give area 49."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "1 8 6 2 5 4 8 3 7",
+    "expectedOutput": "49",
+    "sample": true
+   },
+   {
+    "input": "1 1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "4 3 2 1 4",
+    "expectedOutput": "16",
+    "sample": false
+   },
+   {
+    "input": "1 2 1",
+    "expectedOutput": "2",
+    "sample": false
+   },
+   {
+    "input": "2 3 4 5 18 17 6",
+    "expectedOutput": "17",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "3Sum",
+  "difficulty": "MEDIUM",
+  "description": "Print every **unique** triplet `a b c` with `a + b + c = 0`. Each triplet is printed in ascending order on its own line, and the lines are sorted lexicographically. If there is none print `none`.\n\n**Input:** one line of space-separated integers.",
+  "topics": [
+   "Array",
+   "Two Pointers",
+   "Sorting",
+   "Interview"
+  ],
+  "constraints": [
+   "3 <= n <= 3000"
+  ],
+  "examples": [
+   {
+    "input": "-1 0 1 2 -1 -4",
+    "output": "-1 -1 2\n-1 0 1",
+    "explanation": "Triplets `-1 -1 2` and `-1 0 1`."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "-1 0 1 2 -1 -4",
+    "expectedOutput": "-1 -1 2\n-1 0 1",
+    "sample": true
+   },
+   {
+    "input": "0 1 1",
+    "expectedOutput": "none",
+    "sample": false
+   },
+   {
+    "input": "0 0 0",
+    "expectedOutput": "0 0 0",
+    "sample": false
+   },
+   {
+    "input": "0 0 0 0",
+    "expectedOutput": "0 0 0",
+    "sample": false
+   },
+   {
+    "input": "-2 0 1 1 2",
+    "expectedOutput": "-2 0 2\n-2 1 1",
+    "sample": false
+   },
+   {
+    "input": "3 -3 0 1 -1",
+    "expectedOutput": "-3 0 3\n-1 0 1",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Coin Change",
+  "difficulty": "MEDIUM",
+  "description": "Given coin denominations and an amount, print the **fewest coins** needed to make the amount, or `-1` if impossible. Coins can be reused.\n\n**Input:** line 1: coins (space separated). Line 2: the amount.",
+  "topics": [
+   "DP",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= coins <= 12",
+   "0 <= amount <= 10^4"
+  ],
+  "examples": [
+   {
+    "input": "1 2 5\n11",
+    "output": "3",
+    "explanation": "11 = 5 + 5 + 1."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "1 2 5\n11",
+    "expectedOutput": "3",
+    "sample": true
+   },
+   {
+    "input": "2\n3",
+    "expectedOutput": "-1",
+    "sample": false
+   },
+   {
+    "input": "1\n0",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "186 419 83 408\n6249",
+    "expectedOutput": "20",
+    "sample": false
+   },
+   {
+    "input": "2 5 10 1\n27",
+    "expectedOutput": "4",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Number of Islands",
+  "difficulty": "MEDIUM",
+  "description": "Count the islands in a grid of `1` (land) and `0` (water). An island is formed by land cells connected horizontally or vertically.\n\n**Input:** first line `R C`, then `R` lines each with `C` characters (`0`/`1`).",
+  "topics": [
+   "Graph",
+   "DFS",
+   "Matrix",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= R, C <= 300"
+  ],
+  "examples": [
+   {
+    "input": "4 5\n11000\n11000\n00100\n00011",
+    "output": "3",
+    "explanation": "Three separate islands."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "4 5\n11000\n11000\n00100\n00011",
+    "expectedOutput": "3",
+    "sample": true
+   },
+   {
+    "input": "1 1\n1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "1 1\n0",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "3 3\n101\n010\n101",
+    "expectedOutput": "5",
+    "sample": false
+   },
+   {
+    "input": "2 4\n1111\n1111",
+    "expectedOutput": "1",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Trapping Rain Water",
+  "difficulty": "HARD",
+  "description": "Given an elevation map, print how many units of water it traps after raining.\n\n**Input:** one line of space-separated non-negative heights.",
+  "topics": [
+   "Array",
+   "Two Pointers",
+   "Stack",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 2*10^4"
+  ],
+  "examples": [
+   {
+    "input": "0 1 0 2 1 0 1 3 2 1 2 1",
+    "output": "6",
+    "explanation": "6 units of water are trapped."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "0 1 0 2 1 0 1 3 2 1 2 1",
+    "expectedOutput": "6",
+    "sample": true
+   },
+   {
+    "input": "4 2 0 3 2 5",
+    "expectedOutput": "9",
+    "sample": false
+   },
+   {
+    "input": "1 2 3",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "3",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "5 0 5",
+    "expectedOutput": "5",
+    "sample": false
+   },
+   {
+    "input": "2 0 2 0 2",
+    "expectedOutput": "4",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Longest Palindromic Substring",
+  "difficulty": "MEDIUM",
+  "description": "Print the longest palindromic substring. If several have the same length print the one that starts **first**.\n\n**Input:** one non-empty string.",
+  "topics": [
+   "String",
+   "DP",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= length <= 1000"
+  ],
+  "examples": [
+   {
+    "input": "babad",
+    "output": "bab",
+    "explanation": "`bab` (`aba` is equally long but starts later)."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "babad",
+    "expectedOutput": "bab",
+    "sample": true
+   },
+   {
+    "input": "cbbd",
+    "expectedOutput": "bb",
+    "sample": false
+   },
+   {
+    "input": "a",
+    "expectedOutput": "a",
+    "sample": false
+   },
+   {
+    "input": "ac",
+    "expectedOutput": "a",
+    "sample": false
+   },
+   {
+    "input": "forgeeksskeegfor",
+    "expectedOutput": "geeksskeeg",
+    "sample": false
+   },
+   {
+    "input": "abacdfgdcaba",
+    "expectedOutput": "aba",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "House Robber",
+  "difficulty": "MEDIUM",
+  "description": "Each house holds some money but you cannot rob two adjacent houses. Print the maximum amount you can rob.\n\n**Input:** one line of space-separated non-negative integers.",
+  "topics": [
+   "DP",
+   "Array",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 100"
+  ],
+  "examples": [
+   {
+    "input": "2 7 9 3 1",
+    "output": "12",
+    "explanation": "Rob houses 1, 3 and 5 for 12."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "2 7 9 3 1",
+    "expectedOutput": "12",
+    "sample": true
+   },
+   {
+    "input": "1 2 3 1",
+    "expectedOutput": "4",
+    "sample": false
+   },
+   {
+    "input": "5",
+    "expectedOutput": "5",
+    "sample": false
+   },
+   {
+    "input": "2 1",
+    "expectedOutput": "2",
+    "sample": false
+   },
+   {
+    "input": "10 1 1 10",
+    "expectedOutput": "20",
+    "sample": false
+   },
+   {
+    "input": "0 0 4",
+    "expectedOutput": "4",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Merge Intervals",
+  "difficulty": "MEDIUM",
+  "description": "Merge all overlapping intervals (touching intervals such as `1 3` and `3 5` overlap). Print the merged intervals sorted by start, one per line as `start end`.\n\n**Input:** first line `n`, then `n` lines of `start end`.",
+  "topics": [
+   "Array",
+   "Sorting",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 10^4"
+  ],
+  "examples": [
+   {
+    "input": "4\n1 3\n2 6\n8 10\n15 18",
+    "output": "1 6\n8 10\n15 18",
+    "explanation": "`1 3` and `2 6` merge into `1 6`."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "4\n1 3\n2 6\n8 10\n15 18",
+    "expectedOutput": "1 6\n8 10\n15 18",
+    "sample": true
+   },
+   {
+    "input": "2\n1 4\n4 5",
+    "expectedOutput": "1 5",
+    "sample": false
+   },
+   {
+    "input": "1\n5 9",
+    "expectedOutput": "5 9",
+    "sample": false
+   },
+   {
+    "input": "3\n1 10\n2 3\n4 5",
+    "expectedOutput": "1 10",
+    "sample": false
+   },
+   {
+    "input": "4\n6 8\n1 9\n2 4\n4 7",
+    "expectedOutput": "1 9",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Kth Largest Element in an Array",
+  "difficulty": "MEDIUM",
+  "description": "Print the `k`-th largest element (counting duplicates, so `k = 1` is the maximum).\n\n**Input:** line 1: integers. Line 2: `k`.",
+  "topics": [
+   "Array",
+   "Heap",
+   "Sorting",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= k <= n <= 10^5"
+  ],
+  "examples": [
+   {
+    "input": "3 2 1 5 6 4\n2",
+    "output": "5",
+    "explanation": "Sorted descending: 6 5 4 ... so the 2nd largest is 5."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "3 2 1 5 6 4\n2",
+    "expectedOutput": "5",
+    "sample": true
+   },
+   {
+    "input": "3 2 3 1 2 4 5 5 6\n4",
+    "expectedOutput": "4",
+    "sample": false
+   },
+   {
+    "input": "1\n1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "7 7 7\n2",
+    "expectedOutput": "7",
+    "sample": false
+   },
+   {
+    "input": "-1 -2 -3\n3",
+    "expectedOutput": "-3",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Longest Increasing Subsequence",
+  "difficulty": "MEDIUM",
+  "description": "Print the length of the longest strictly increasing subsequence.\n\n**Input:** one line of space-separated integers.",
+  "topics": [
+   "DP",
+   "Binary Search",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 2500"
+  ],
+  "examples": [
+   {
+    "input": "10 9 2 5 3 7 101 18",
+    "output": "4",
+    "explanation": "`2 3 7 101` has length 4."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "10 9 2 5 3 7 101 18",
+    "expectedOutput": "4",
+    "sample": true
+   },
+   {
+    "input": "0 1 0 3 2 3",
+    "expectedOutput": "4",
+    "sample": false
+   },
+   {
+    "input": "7 7 7 7",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "5 4 3 2 1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "4 10 4 3 8 9",
+    "expectedOutput": "3",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "Search in Rotated Sorted Array",
+  "difficulty": "MEDIUM",
+  "description": "A sorted array of distinct integers was rotated at an unknown pivot. Print the index of `target`, or `-1`. Aim for O(log n).\n\n**Input:** line 1: the array. Line 2: `target`.",
+  "topics": [
+   "Array",
+   "Binary Search",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 5000",
+   "All values are distinct"
+  ],
+  "examples": [
+   {
+    "input": "4 5 6 7 0 1 2\n0",
+    "output": "4",
+    "explanation": "0 is at index 4."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "4 5 6 7 0 1 2\n0",
+    "expectedOutput": "4",
+    "sample": true
+   },
+   {
+    "input": "4 5 6 7 0 1 2\n3",
+    "expectedOutput": "-1",
+    "sample": false
+   },
+   {
+    "input": "1\n0",
+    "expectedOutput": "-1",
+    "sample": false
+   },
+   {
+    "input": "1\n1",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "5 1 3\n5",
+    "expectedOutput": "0",
+    "sample": false
+   },
+   {
+    "input": "3 4 5 1 2\n1",
+    "expectedOutput": "3",
+    "sample": false
+   }
+  ]
+ },
+ {
+  "title": "FizzBuzz",
+  "difficulty": "EASY",
+  "description": "For each number from 1 to `n` print `FizzBuzz` if divisible by 3 and 5, `Fizz` if divisible by 3, `Buzz` if divisible by 5, otherwise the number. One value per line.\n\n**Input:** a single integer `n`.",
+  "topics": [
+   "Math",
+   "Interview"
+  ],
+  "constraints": [
+   "1 <= n <= 10^4"
+  ],
+  "examples": [
+   {
+    "input": "5",
+    "output": "1\n2\nFizz\n4\nBuzz",
+    "explanation": "3 is Fizz and 5 is Buzz."
+   }
+  ],
+  "testCases": [
+   {
+    "input": "5",
+    "expectedOutput": "1\n2\nFizz\n4\nBuzz",
+    "sample": true
+   },
+   {
+    "input": "1",
+    "expectedOutput": "1",
+    "sample": false
+   },
+   {
+    "input": "15",
+    "expectedOutput": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz",
+    "sample": false
+   },
+   {
+    "input": "20",
+    "expectedOutput": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz\n16\n17\nFizz\n19\nBuzz",
+    "sample": false
+   }
+  ]
+ }
+]

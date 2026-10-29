@@ -16,6 +16,8 @@ public class PlaylistResponse {
     private String description;
     private String accentColor;
     private int problemCount;
+    /** True for system playlists, which users cannot edit. */
+    private boolean featured;
     private Instant createdAt;
     private Instant updatedAt;
     private List<PlaylistProblemSummary> problems;

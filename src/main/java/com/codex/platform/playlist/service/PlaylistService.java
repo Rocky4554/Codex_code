@@ -46,13 +46,16 @@ public class PlaylistService {
     private final ProblemService problemService;
 
     public List<PlaylistResponse> listMine(UUID userId) {
-        return playlistRepository.findByOwnerUserIdOrderByUpdatedAtDesc(userId).stream()
+        List<Playlist> all = new ArrayList<>(playlistRepository.findByOwnerUserIdOrderByUpdatedAtDesc(userId));
+        all.addAll(playlistRepository.findByFeaturedTrueOrderByCreatedAtAsc());
+        return all.stream()
                 .map(p -> toSummary(p, (int) itemRepository.countByPlaylistId(p.getId())))
                 .toList();
     }
 
     public PlaylistResponse getMine(UUID userId, UUID playlistId) {
-        Playlist playlist = requireOwned(userId, playlistId);
+        Playlist playlist = playlistRepository.findByIdAndFeaturedTrue(playlistId)
+                .orElseGet(() -> requireOwned(userId, playlistId));
         return toDetail(playlist);
     }
 
@@ -163,9 +166,10 @@ public class PlaylistService {
 
     public boolean userCanAccessProblem(UUID userId, UUID problemId) {
         if (userId == null) return false;
-        List<UUID> playlistIds = playlistRepository.findByOwnerUserIdOrderByUpdatedAtDesc(userId).stream()
+        List<UUID> playlistIds = new ArrayList<>(playlistRepository.findByOwnerUserIdOrderByUpdatedAtDesc(userId).stream()
                 .map(Playlist::getId)
-                .toList();
+                .toList());
+        playlistRepository.findByFeaturedTrueOrderByCreatedAtAsc().forEach(pl -> playlistIds.add(pl.getId()));
         if (playlistIds.isEmpty()) return false;
         return itemRepository.existsByProblemIdAndPlaylistIdIn(problemId, playlistIds);
     }
@@ -182,6 +186,7 @@ public class PlaylistService {
                 .description(playlist.getDescription())
                 .accentColor(playlist.getAccentColor())
                 .problemCount(count)
+                .featured(Boolean.TRUE.equals(playlist.getFeatured()))
                 .createdAt(playlist.getCreatedAt())
                 .updatedAt(playlist.getUpdatedAt())
                 .problems(List.of())
@@ -215,6 +220,7 @@ public class PlaylistService {
                 .description(playlist.getDescription())
                 .accentColor(playlist.getAccentColor())
                 .problemCount(problems.size())
+                .featured(Boolean.TRUE.equals(playlist.getFeatured()))
                 .createdAt(playlist.getCreatedAt())
                 .updatedAt(playlist.getUpdatedAt())
                 .problems(problems)

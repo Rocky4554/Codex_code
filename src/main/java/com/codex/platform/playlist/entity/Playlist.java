@@ -32,6 +32,10 @@ public class Playlist {
     @Column(nullable = false, length = 16)
     private String accentColor;
 
+    /** System playlists (curated topic / interview lists) are visible to everyone and read-only. */
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private Boolean featured = false;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -40,6 +44,9 @@ public class Playlist {
 
     @PrePersist
     void onCreate() {
+        if (featured == null) {
+            featured = false;
+        }
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;

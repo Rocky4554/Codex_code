@@ -13,4 +13,10 @@ public interface PlaylistRepository extends JpaRepository<Playlist, UUID> {
     List<Playlist> findByOwnerUserIdOrderByUpdatedAtDesc(UUID ownerUserId);
 
     Optional<Playlist> findByIdAndOwnerUserId(UUID id, UUID ownerUserId);
+
+    List<Playlist> findByFeaturedTrueOrderByCreatedAtAsc();
+
+    Optional<Playlist> findByIdAndFeaturedTrue(UUID id);
+
+    Optional<Playlist> findFirstByFeaturedTrueAndTitleIgnoreCase(String title);
 }
