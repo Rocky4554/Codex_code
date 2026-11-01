@@ -238,6 +238,7 @@ Create a Render Web Service:
 - Connect to your GitHub repo, root directory `Codex_backend/`
 - Use the existing `Dockerfile` (multi-stage; produces the same fat JAR)
 - Region: **Singapore** (closest to EC2 Mumbai, ~50-80 ms RTT)
+  > ⚠️ Must be close to the **database** too (Supabase `ap-south-1` Mumbai). The current service `codex-code-el37` was created in Oregon by mistake, which adds ~220 ms per SQL query — see `problems.md` #31. Render can't change region in place; recreate the service.
 - Plan: Starter ($7/mo, always-on) — Free tier sleeps after inactivity which breaks the queue worker
 - Environment variables — copy the `prod` set from EC2's `.env.production`, then add:
   ```
@@ -248,7 +249,7 @@ Create a Render Web Service:
   APP_CORS_ALLOWED_ORIGINS=https://sprintcode.vercel.app
   ```
   **Drop** all `EXECUTION_DOCKER_*` and `EXECUTION_TEMP_DIR` vars — they no longer apply.
-- Health check path: `/actuator/health`
+- Health check path: `/actuator/health` (mail indicator is disabled in `prod` so missing SMTP creds don't fail it)
 
 The Render service connects to the same Neon Postgres and Upstash Redis as the EC2 backend. Both backends running simultaneously is **safe** because:
 - Submissions are de-queued atomically by Redisson (only one worker grabs each)

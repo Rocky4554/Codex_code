@@ -516,3 +516,46 @@ curl -X POST http://localhost:8080/api/submissions \
 - When debugging "killed" / "terminated" errors, check dmesg and cgroup limits first
 - Building in tmpfs when disk is full is a good workaround but not a solution — fix the root cause
              
+### 31. Every Click Slow on the Deployed App (~1.3s per API call)
+**Status:** Partially solved (code fixes shipped; region move pending)
+**Problem:** On https://sprintcode.vercel.app every page change, problem open and data load felt slow — not just code execution. Even `GET /api/languages` (~1 KB) took 1.25–1.6s, both through the Vercel proxy and when calling `https://codex-code-el37.onrender.com` directly from Delhi.
+
+**Root Cause (measured, 2026-11-01):**
+- **Region mismatch.** The Render backend runs in **Oregon** (`gcp-us-west1`) while Supabase Postgres is in **Mumbai** (`ap-south-1`). Every SQL query is a ~220 ms trans-Pacific round trip, and requests run 2–4 queries sequentially.
+- **Vercel function region.** `x-vercel-id: bom1::iad1` — the proxy function runs in US East. (Fine while the backend is in Oregon; should move to `bom1` once the backend is in Asia.)
+- **Extra DB round-trips in code:**
+  - `JwtAuthenticationFilter` loaded the user (`findById`) on **every** authenticated request to check `tokenVersion`.
+  - `GET /api/problems/{id}` fetched the same problem twice (controller + service).
+  - `listMySubmissions` ran one `submissionResultRepository.findById` per submission (N+1).
+- **Full page reload on problem open.** The problems list row used `window.location.href`, which reloaded the whole app, dropped the React Query cache and re-ran the session check every time.
+- **Health check DOWN.** `/actuator/health` returned 503 because the mail indicator tried Gmail SMTP with no password (~3.5s per check). DB and Redis were UP.
+
+**Solution (shipped):**
+- `auth/service/TokenVersionCache.java` — in-memory `tokenVersion` cache, 30s TTL, evicted on password reset in `PasswordResetService`. Other instances may accept a pre-reset token for up to 30s.
+- `ProblemController.getProblemById` — load the problem once, pass it to `toDetail`.
+- `SubmissionService.listMySubmissions` — one `findAllById` for results, mapped by submission ID.
+- `application-prod.properties` — `management.health.mail.enabled=false`.
+- `application-dev.properties` — `spring.jpa.show-sql` now defaults to `false` (`SHOW_SQL=true` to enable).
+- Frontend `app/(main)/problems/page.jsx` — `router.push` + `router.prefetch` on hover instead of `window.location.href`.
+
+**Pending (infra):**
+1. Recreate the Render Web Service in **Singapore** (Render can't change region in place), copy env vars, update `BACKEND_URL` in Vercel, delete the Oregon service.
+2. Then pin Vercel functions to Mumbai (`preferredRegion = "bom1"` on the proxy/auth routes). Do **not** do this while the backend is still in Oregon — it would add latency.
+Expected result: ~0.2–0.4s per API call.
+
+**How to measure:**
+```bash
+# Through the frontend proxy (shows Vercel region in x-vercel-id)
+curl -s -o /dev/null -w "ttfb=%{time_starttransfer}s\n" https://sprintcode.vercel.app/api/proxy/languages
+curl -sI https://sprintcode.vercel.app/api/proxy/languages | grep -i x-vercel-id
+
+# Backend directly, and where Render hosts it
+curl -s -o /dev/null -w "ttfb=%{time_starttransfer}s\n" https://codex-code-el37.onrender.com/api/languages
+dig +short codex-code-el37.onrender.com   # gcp-us-west1 = Oregon, singapore = Singapore
+```
+
+**Lessons:**
+- Keep the app server in the same region as the database — per-query latency multiplies with every sequential query.
+- Don't hit the DB in a request filter if a short-lived cache will do.
+- Use client-side navigation in Next.js; `window.location` throws away all client state.
+- Optional dependencies (mail) shouldn't be part of the health check.
