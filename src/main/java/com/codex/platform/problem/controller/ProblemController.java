@@ -43,9 +43,7 @@ public class ProblemController {
         Problem problem = problemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Problem not found"));
         assertCanView(problem);
-        return problemService.getProblemDetailById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(problemService.toDetail(problem, false));
     }
 
     @GetMapping("/{id}/admin")

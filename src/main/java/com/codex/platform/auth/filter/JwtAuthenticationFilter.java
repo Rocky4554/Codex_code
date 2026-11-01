@@ -1,8 +1,7 @@
 package com.codex.platform.auth.filter;
 
+import com.codex.platform.auth.service.TokenVersionCache;
 import com.codex.platform.auth.util.JwtUtil;
-import com.codex.platform.user.entity.User;
-import com.codex.platform.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +23,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final TokenVersionCache tokenVersionCache;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -45,9 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     int tokenVersion = jwtUtil.extractTokenVersion(token);
 
                     // Reject tokens issued before a password reset (global logout)
-                    User user = userRepository.findById(userId).orElse(null);
-                    int currentVersion = user == null || user.getTokenVersion() == null ? 0 : user.getTokenVersion();
-                    if (user != null && tokenVersion == currentVersion) {
+                    Integer currentVersion = tokenVersionCache.get(userId).orElse(null);
+                    if (currentVersion != null && tokenVersion == currentVersion) {
                         Map<String, Object> principal = Map.of(
                                 "username", username,
                                 "userId", userId,

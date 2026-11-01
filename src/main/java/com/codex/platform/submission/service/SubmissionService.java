@@ -10,6 +10,7 @@ import com.codex.platform.submission.dto.SubmitCodeRequest;
 import com.codex.platform.submission.dto.SubmitCodeResponse;
 import com.codex.platform.submission.dto.SubmissionResponse;
 import com.codex.platform.submission.entity.Submission;
+import com.codex.platform.submission.entity.SubmissionResult;
 import com.codex.platform.submission.repository.SubmissionRepository;
 import com.codex.platform.submission.repository.SubmissionResultRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,8 +29,12 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -188,6 +193,12 @@ public class SubmissionService {
                 ? submissionRepository.findByUserIdAndProblemId(currentUserId, problemId)
                 : submissionRepository.findByUserId(currentUserId);
 
+        // One batched lookup instead of a findById per submission (N+1)
+        Map<UUID, SubmissionResult> resultsById = submissionResultRepository
+                .findAllById(submissions.stream().map(Submission::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(SubmissionResult::getSubmissionId, Function.identity()));
+
         return submissions.stream()
                 .sorted(Comparator.comparing(Submission::getCreatedAt).reversed())
                 .map(submission -> {
@@ -200,7 +211,7 @@ public class SubmissionService {
                             .createdAt(submission.getCreatedAt())
                             .sourceCode(submission.getSourceCode());
 
-                    submissionResultRepository.findById(submission.getId()).ifPresent(result -> {
+                    Optional.ofNullable(resultsById.get(submission.getId())).ifPresent(result -> {
                         builder.executionTimeMs(result.getExecutionTimeMs())
                                 .memoryUsedMb(result.getMemoryUsedMb())
                                 .passedTestCases(result.getPassedTestCases())

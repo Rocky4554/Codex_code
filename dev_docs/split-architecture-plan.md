@@ -245,7 +245,7 @@ Create a Render Web Service:
   EXECUTION_MODE=remote
   EXECUTOR_AGENT_BASE_URL=https://executor.yourdomain.com
   EXECUTOR_AGENT_TOKEN=<same-token-as-EC2-agent>
-  APP_CORS_ALLOWED_ORIGINS=https://codex-front-beryl.vercel.app
+  APP_CORS_ALLOWED_ORIGINS=https://sprintcode.vercel.app
   ```
   **Drop** all `EXECUTION_DOCKER_*` and `EXECUTION_TEMP_DIR` vars — they no longer apply.
 - Health check path: `/actuator/health`

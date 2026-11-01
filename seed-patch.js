@@ -5,7 +5,7 @@
  */
 
 const PROBLEM_ID = 'd6afcc3e-2ef6-478d-a634-a121712d8aa2'; // ID from first seed run
-const DEFAULT_BACKEND_URL = 'https://codex-code-1.onrender.com';
+const DEFAULT_BACKEND_URL = 'https://codex-code-el37.onrender.com';
 
 async function patch() {
     const baseUrl = process.argv[2] || DEFAULT_BACKEND_URL;

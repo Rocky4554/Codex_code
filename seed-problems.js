@@ -2,7 +2,7 @@
  * Seed script to add problems and test cases to Codex backend
  * Usage: node seed-problems.js [backend-url]
  * 
- * Default URL: https://codex-backend-demo.onrender.com
+ * Default URL: https://codex-code-el37.onrender.com
  * Examples:
  *   node seed-problems.js                    # uses default
  *   node seed-problems.js http://localhost:8080  # local dev
@@ -121,7 +121,7 @@ const problems = [
     }
 ];
 
-const DEFAULT_BACKEND_URL = 'https://codex-code-1.onrender.com';
+const DEFAULT_BACKEND_URL = 'https://codex-code-el37.onrender.com';
 
 async function seedProblems() {
     const baseUrl = process.argv[2] || DEFAULT_BACKEND_URL;

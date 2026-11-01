@@ -2,6 +2,7 @@ package com.codex.platform.auth.passwordreset;
 
 import com.codex.platform.auth.dto.MessageResponse;
 import com.codex.platform.auth.dto.VerifyOtpResponse;
+import com.codex.platform.auth.service.TokenVersionCache;
 import com.codex.platform.auth.util.JwtUtil;
 import com.codex.platform.user.entity.User;
 import com.codex.platform.user.repository.UserRepository;
@@ -34,6 +35,7 @@ public class PasswordResetService {
     private final JwtUtil jwtUtil;
     private final PasswordResetOtpStore otpStore;
     private final MailService mailService;
+    private final TokenVersionCache tokenVersionCache;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${password-reset.jwt-ttl-ms:600000}")
@@ -149,6 +151,7 @@ public class PasswordResetService {
         int nextVersion = (user.getTokenVersion() == null ? 0 : user.getTokenVersion()) + 1;
         user.setTokenVersion(nextVersion);
         userRepository.save(user);
+        tokenVersionCache.evict(userId);
 
         // Invalidate the one-time reset JWT and any leftover OTP state
         otpStore.clearVerified(userId);
