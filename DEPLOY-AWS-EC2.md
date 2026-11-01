@@ -1,5 +1,7 @@
 # Deploy Codex Platform on AWS EC2
 
+> **Legacy:** this guide describes the old setup where the whole backend ran on EC2. Production now runs on Render + Supabase + Redis Cloud, with only the executor agent on EC2 — see [`dev_docs/infrastructure.md`](dev_docs/infrastructure.md).
+
 You have Docker (and Docker Compose) on EC2. Follow these steps to run the app in production.
 
 ---

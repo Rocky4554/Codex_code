@@ -37,13 +37,13 @@ docker-compose up redis -d
 docker compose -f docker-compose.monitoring.yml up -d
 ```
 
-Dev profile config (`application-dev.properties`):
-- PostgreSQL: `localhost:5432/codex`
-- Redis: `localhost:6379`
-- Docker Host: `npipe:////./pipe/docker_engine` (Windows Docker Desktop)
-- Temp dir: `C:/temp/codex/submissions`
+Dev profile config (`application-dev.properties`) defaults to the cloud services (override via env):
+- PostgreSQL: Supabase pooler (`DB_URL`, needs `prepareThreshold=0`)
+- Redis: Redis Cloud (`REDIS_HOST` / `REDIS_URL`)
+- Execution: `EXECUTION_MODE=remote` → EC2 executor agent (`EXECUTOR_AGENT_BASE_URL`)
+- Build with JDK 17 — Lombok 1.18.30 fails on newer JDKs
 
-Production profile (`prod`) uses Neon Cloud PostgreSQL + Redis Cloud. Set via `SPRING_PROFILES_ACTIVE=prod` and populate `.env.production`.
+Production profile (`prod`) runs on **Render** with **Supabase PostgreSQL** + **Redis Cloud**; the frontend is on **Vercel**. Set via `SPRING_PROFILES_ACTIVE=prod`. See `dev_docs/infrastructure.md` for what runs where.
 
 ## Architecture
 
@@ -103,9 +103,11 @@ Key variables (see `.env.example`):
 |----------|---------|
 | `SPRING_PROFILES_ACTIVE` | `dev` or `prod` |
 | `JWT_SECRET` | Must be 256+ bit secret |
-| `NEON_DB_*` | Prod PostgreSQL (Neon) credentials |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USERNAME` / `DB_PASSWORD` | Prod PostgreSQL (Supabase pooler) credentials |
 | `REDIS_URL` / `REDIS_PASSWORD` | Redis connection |
-| `EXECUTION_DOCKER_HOST` | Docker socket path |
+| `EXECUTION_MODE` | `remote` (EC2 executor agent) or `local` (Docker on same host) |
+| `EXECUTOR_AGENT_BASE_URL` / `EXECUTOR_AGENT_TOKEN` | Executor agent endpoint + shared token |
+| `EXECUTION_DOCKER_HOST` | Docker socket path (local mode only) |
 | `EXECUTION_TEMP_DIR` | Working dir for code files |
 | `EXECUTION_WORKER_COUNT` | Number of background worker threads |
 | `APP_CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend URLs |
@@ -120,6 +122,7 @@ Key variables (see `.env.example`):
 ## Developer Docs
 
 Detailed guides are in `dev_docs/`:
+- `infrastructure.md` — What runs where (Vercel, Render, Supabase, Redis Cloud, EC2 executor)
 - `api-docs.md` — Full REST API reference
 - `QUICKSTART.md` — Step-by-step local setup with Postman examples
 - `commands.md` — Useful Docker & Maven commands

@@ -1,5 +1,7 @@
 # Codex Platform — EC2 Deployment Guide
 
+> **Legacy:** this guide describes the old setup where the whole backend ran on EC2. Production now runs on Render + Supabase + Redis Cloud, with only the executor agent on EC2 — see [`dev_docs/infrastructure.md`](infrastructure.md).
+
 ## Architecture Overview
 
 ```

@@ -2,6 +2,8 @@
 
 A Spring Boot application for executing user-submitted code in isolated Docker containers with real-time feedback.
 
+> **Deployment:** frontend on Vercel (https://sprintcode.vercel.app), backend on Render, PostgreSQL on Supabase, Redis on Redis Cloud, code execution on an AWS EC2 executor agent. See [infrastructure.md](infrastructure.md).
+
 ## Features
 
 - 🔐 **JWT Authentication** - Secure stateless authentication
@@ -44,7 +46,7 @@ com.codex.platform
 
 - **Java 17+**
 - **Maven 3.6+**
-- **PostgreSQL 14+** (or Supabase)
+- **PostgreSQL 14+** (production uses Supabase)
 - **Redis 6+**
 - **Docker** (running on host machine)
 
