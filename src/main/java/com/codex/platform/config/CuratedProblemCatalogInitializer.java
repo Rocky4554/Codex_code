@@ -424,8 +424,8 @@ public class CuratedProblemCatalogInitializer {
                         "Implement a stack that supports getMin in O(1).\nInput: first line q, then commands (push x, pop, top, getMin).\nOutput: print results of pop/top/getMin commands line by line.",
                         List.of("Stack"),
                         List.of(),
-                        List.of(ex("8\npush -2\npush 0\npush -3\ngetMin\npop\ntop\ngetMin\npop", "-3\n-3\n0\n-2", "Track the current minimum at each step.")),
-                        List.of(tc("8\npush -2\npush 0\npush -3\ngetMin\npop\ntop\ngetMin\npop", "-3\n-3\n0\n-2", true), tc("5\npush 5\npush 4\ngetMin\npop\ngetMin", "4\n4\n5", false))
+                        List.of(ex("8\npush -2\npush 0\npush -3\ngetMin\npop\ntop\ngetMin\npop", "-3\n-3\n0\n-2\n0", "getMin → -3, pop → -3, top → 0, getMin → -2, pop → 0.")),
+                        List.of(tc("8\npush -2\npush 0\npush -3\ngetMin\npop\ntop\ngetMin\npop", "-3\n-3\n0\n-2\n0", true), tc("5\npush 5\npush 4\ngetMin\npop\ngetMin", "4\n4\n5", false))
                 ),
                 seed(
                         34,
