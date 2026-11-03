@@ -36,6 +36,10 @@ public class Playlist {
     @Column(nullable = false, columnDefinition = "boolean not null default false")
     private Boolean featured = false;
 
+    /** Position among featured playlists (catalog order); null for user playlists. */
+    @Column
+    private Integer displayOrder;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

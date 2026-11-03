@@ -6,11 +6,7 @@ import com.codex.platform.playlist.entity.PlaylistItem;
 import com.codex.platform.playlist.repository.PlaylistItemRepository;
 import com.codex.platform.playlist.repository.PlaylistRepository;
 import com.codex.platform.problem.entity.Problem;
-import com.codex.platform.problem.entity.ProblemExample;
-import com.codex.platform.problem.entity.TestCase;
-import com.codex.platform.problem.repository.ProblemExampleRepository;
 import com.codex.platform.problem.repository.ProblemRepository;
-import com.codex.platform.problem.repository.TestCaseRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +46,7 @@ public class InterviewCatalogInitializer {
 
     private static final int CODING_ORDER_BASE = 100;
     private static final int SQL_ORDER_BASE = 200;
+    private static final int SHEET_ORDER_BASE = 300;
 
     /** Topics for problems seeded before topics existed. Applied only when topics are empty. */
     private static final Map<String, List<String>> LEGACY_TOPICS = Map.of(
@@ -65,8 +62,7 @@ public class InterviewCatalogInitializer {
             "Binary Search", List.of("Binary Search", "Array"));
 
     private final ProblemRepository problemRepository;
-    private final ProblemExampleRepository exampleRepository;
-    private final TestCaseRepository testCaseRepository;
+    private final CatalogSync catalogSync;
     private final PlaylistRepository playlistRepository;
     private final PlaylistItemRepository itemRepository;
     private final ObjectMapper objectMapper;
@@ -77,12 +73,14 @@ public class InterviewCatalogInitializer {
     public void onApplicationReady() {
         try {
             backfillLegacyTopics();
-            int coding = upsertProblems("catalog/coding-interview-problems.json", CODING_ORDER_BASE);
-            int sql = upsertProblems("catalog/sql-interview-problems.json", SQL_ORDER_BASE);
+            CatalogSync.Snapshot snap = catalogSync.snapshot();
+            int coding = upsertProblems("catalog/coding-interview-problems.json", CODING_ORDER_BASE, snap);
+            int sql = upsertProblems("catalog/sql-interview-problems.json", SQL_ORDER_BASE, snap);
+            int sheet = upsertProblems("catalog/dsa-sheet-problems.json", SHEET_ORDER_BASE, snap);
             tagSqlSampleProblem();
             int playlists = syncPlaylists("catalog/playlists.json");
-            log.info("Interview catalog synced: {} coding, {} SQL problem(s), {} featured playlist(s)",
-                    coding, sql, playlists);
+            log.info("Interview catalog synced: {} coding, {} SQL, {} DSA sheet problem(s), {} featured playlist(s)",
+                    coding, sql, sheet, playlists);
         } catch (Exception e) {
             log.error("Interview catalog sync failed", e);
         }
@@ -107,48 +105,32 @@ public class InterviewCatalogInitializer {
         }
     }
 
-    private int upsertProblems(String resource, int orderBase) throws Exception {
+    private int upsertProblems(String resource, int orderBase, CatalogSync.Snapshot snap) throws Exception {
         JsonNode root = read(resource);
         int index = 0;
+        int written = 0;
         for (JsonNode n : root) {
-            Problem problem = problemRepository.findByTitleIgnoreCase(n.get("title").asText()).orElseGet(Problem::new);
-            problem.setTitle(n.get("title").asText());
-            problem.setDescription(n.get("description").asText());
-            problem.setDifficulty(ProblemDifficulty.valueOf(n.get("difficulty").asText()));
-            problem.setTimeLimitMs(5000);
-            problem.setMemoryLimitMb(256);
-            problem.setOrderNum(orderBase + index++);
-            problem.setConstraintsJson(n.get("constraints").isEmpty() ? null : n.get("constraints").toString());
-            problem.setTopicsJson(n.get("topics").isEmpty() ? null : n.get("topics").toString());
-            problem.setInCatalog(true);
-            Problem saved = problemRepository.save(problem);
-
-            exampleRepository.deleteByProblemId(saved.getId());
-            List<ProblemExample> examples = new ArrayList<>();
-            int order = 0;
+            List<CatalogSync.ExampleSpec> examples = new ArrayList<>();
             for (JsonNode e : n.get("examples")) {
-                ProblemExample row = new ProblemExample();
-                row.setProblemId(saved.getId());
-                row.setInput(e.get("input").asText());
-                row.setOutput(e.get("output").asText());
-                row.setExplanation(e.path("explanation").asText(null));
-                row.setDisplayOrder(order++);
-                examples.add(row);
+                examples.add(new CatalogSync.ExampleSpec(e.get("input").asText(), e.get("output").asText(), e.path("explanation").asText(null)));
             }
-            exampleRepository.saveAll(examples);
-
-            testCaseRepository.deleteByProblemId(saved.getId());
-            List<TestCase> cases = new ArrayList<>();
+            List<CatalogSync.TestSpec> tests = new ArrayList<>();
             for (JsonNode t : n.get("testCases")) {
-                TestCase row = new TestCase();
-                row.setProblemId(saved.getId());
-                row.setInput(t.get("input").asText());
-                row.setExpectedOutput(t.get("expectedOutput").asText());
-                row.setIsSample(t.get("sample").asBoolean());
-                cases.add(row);
+                tests.add(new CatalogSync.TestSpec(t.get("input").asText(), t.get("expectedOutput").asText(), t.get("sample").asBoolean()));
             }
-            testCaseRepository.saveAll(cases);
+            CatalogSync.ProblemSpec spec = new CatalogSync.ProblemSpec(
+                    n.get("title").asText(),
+                    n.get("description").asText(),
+                    ProblemDifficulty.valueOf(n.get("difficulty").asText()),
+                    orderBase + index++,
+                    n.get("constraints").isEmpty() ? null : n.get("constraints").toString(),
+                    n.get("topics").isEmpty() ? null : n.get("topics").toString(),
+                    true,
+                    examples,
+                    tests);
+            if (catalogSync.upsert(spec, snap)) written++;
         }
+        log.info("{}: {} problem(s), {} changed", resource, index, written);
         return index;
     }
 
@@ -169,7 +151,9 @@ public class InterviewCatalogInitializer {
         }
 
         int count = 0;
+        Set<String> defined = new LinkedHashSet<>();
         for (JsonNode def : defs) {
+            defined.add(def.get("title").asText().toLowerCase());
             Set<UUID> ids = new LinkedHashSet<>();
             for (JsonNode t : def.path("titles")) {
                 Problem p = byTitle.get(t.asText().toLowerCase());
@@ -193,6 +177,7 @@ public class InterviewCatalogInitializer {
             playlist.setTitle(def.get("title").asText());
             playlist.setDescription(def.path("description").asText(null));
             playlist.setAccentColor(def.path("accentColor").asText("#A8E6CF"));
+            playlist.setDisplayOrder(count);
             Playlist saved = playlistRepository.save(playlist);
 
             List<UUID> desired = List.copyOf(ids);
@@ -212,6 +197,15 @@ public class InterviewCatalogInitializer {
                 itemRepository.saveAll(items);
             }
             count++;
+        }
+
+        // Featured playlists that are no longer in the catalog file are retired.
+        for (Playlist stale : playlistRepository.findByFeaturedTrueOrderByDisplayOrderAscCreatedAtAsc()) {
+            if (SYSTEM_OWNER.equals(stale.getOwnerUserId()) && !defined.contains(stale.getTitle().toLowerCase())) {
+                itemRepository.deleteByPlaylistId(stale.getId());
+                playlistRepository.delete(stale);
+                log.info("Removed retired featured playlist '{}'", stale.getTitle());
+            }
         }
         return count;
     }

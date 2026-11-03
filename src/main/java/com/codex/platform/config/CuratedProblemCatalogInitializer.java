@@ -1,12 +1,6 @@
 package com.codex.platform.config;
 
 import com.codex.platform.common.enums.ProblemDifficulty;
-import com.codex.platform.problem.entity.Problem;
-import com.codex.platform.problem.entity.ProblemExample;
-import com.codex.platform.problem.entity.TestCase;
-import com.codex.platform.problem.repository.ProblemExampleRepository;
-import com.codex.platform.problem.repository.ProblemRepository;
-import com.codex.platform.problem.repository.TestCaseRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +11,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Curated catalog sync runs on {@link ApplicationReadyEvent} so the servlet container and health
@@ -30,69 +23,33 @@ import java.util.UUID;
 @Slf4j
 public class CuratedProblemCatalogInitializer {
 
-    private final ProblemRepository problemRepository;
-    private final ProblemExampleRepository exampleRepository;
-    private final TestCaseRepository testCaseRepository;
+    private final CatalogSync catalogSync;
     private final ObjectMapper objectMapper;
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(10)
     @Transactional
     public void onApplicationReady() throws Exception {
-        int upserted = 0;
-        for (ProblemSeed seed : catalog()) {
-            upsert(seed);
-            upserted++;
+        CatalogSync.Snapshot snap = catalogSync.snapshot();
+        int written = 0;
+        List<ProblemSeed> seeds = catalog();
+        for (ProblemSeed seed : seeds) {
+            if (catalogSync.upsert(toSpec(seed), snap)) written++;
         }
-        log.info("Curated problem catalog synced: {} problem(s)", upserted);
+        log.info("Curated problem catalog synced: {} problem(s), {} changed", seeds.size(), written);
     }
 
-    private void upsert(ProblemSeed seed) throws Exception {
-        Problem problem = problemRepository.findByTitleIgnoreCase(seed.title()).orElseGet(Problem::new);
-        problem.setTitle(seed.title());
-        problem.setDescription(seed.description());
-        problem.setDifficulty(seed.difficulty());
-        problem.setTimeLimitMs(5000);
-        problem.setMemoryLimitMb(256);
-        problem.setOrderNum(seed.orderNum());
-        problem.setConstraintsJson(seed.constraints().isEmpty() ? null : objectMapper.writeValueAsString(seed.constraints()));
-        problem.setTopicsJson(seed.topics().isEmpty() ? null : objectMapper.writeValueAsString(seed.topics()));
-        Problem saved = problemRepository.save(problem);
-
-        replaceExamples(saved.getId(), seed.examples());
-        replaceTestCases(saved.getId(), seed.testCases());
-    }
-
-    private void replaceExamples(UUID problemId, List<ExampleSeed> examples) {
-        exampleRepository.deleteByProblemId(problemId);
-        if (examples.isEmpty()) return;
-        List<ProblemExample> rows = examples.stream()
-                .map(example -> {
-                    ProblemExample row = new ProblemExample();
-                    row.setProblemId(problemId);
-                    row.setInput(example.input());
-                    row.setOutput(example.output());
-                    row.setExplanation(example.explanation());
-                    row.setDisplayOrder(example.displayOrder());
-                    return row;
-                })
-                .toList();
-        exampleRepository.saveAll(rows);
-    }
-
-    private void replaceTestCases(UUID problemId, List<TestCaseSeed> testCases) {
-        testCaseRepository.deleteByProblemId(problemId);
-        List<TestCase> rows = testCases.stream()
-                .map(testCase -> {
-                    TestCase row = new TestCase();
-                    row.setProblemId(problemId);
-                    row.setInput(testCase.input());
-                    row.setExpectedOutput(testCase.expectedOutput());
-                    row.setIsSample(testCase.sample());
-                    return row;
-                })
-                .toList();
-        testCaseRepository.saveAll(rows);
+    private CatalogSync.ProblemSpec toSpec(ProblemSeed seed) throws Exception {
+        return new CatalogSync.ProblemSpec(
+                seed.title(),
+                seed.description(),
+                seed.difficulty(),
+                seed.orderNum(),
+                seed.constraints().isEmpty() ? null : objectMapper.writeValueAsString(seed.constraints()),
+                seed.topics().isEmpty() ? null : objectMapper.writeValueAsString(seed.topics()),
+                null,
+                seed.examples().stream().map(e -> new CatalogSync.ExampleSpec(e.input(), e.output(), e.explanation())).toList(),
+                seed.testCases().stream().map(t -> new CatalogSync.TestSpec(t.input(), t.expectedOutput(), t.sample())).toList());
     }
 
     private List<ProblemSeed> catalog() {

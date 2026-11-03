@@ -47,7 +47,7 @@ public class PlaylistService {
 
     public List<PlaylistResponse> listMine(UUID userId) {
         List<Playlist> all = new ArrayList<>(playlistRepository.findByOwnerUserIdOrderByUpdatedAtDesc(userId));
-        all.addAll(playlistRepository.findByFeaturedTrueOrderByCreatedAtAsc());
+        all.addAll(playlistRepository.findByFeaturedTrueOrderByDisplayOrderAscCreatedAtAsc());
         return all.stream()
                 .map(p -> toSummary(p, (int) itemRepository.countByPlaylistId(p.getId())))
                 .toList();
@@ -169,7 +169,7 @@ public class PlaylistService {
         List<UUID> playlistIds = new ArrayList<>(playlistRepository.findByOwnerUserIdOrderByUpdatedAtDesc(userId).stream()
                 .map(Playlist::getId)
                 .toList());
-        playlistRepository.findByFeaturedTrueOrderByCreatedAtAsc().forEach(pl -> playlistIds.add(pl.getId()));
+        playlistRepository.findByFeaturedTrueOrderByDisplayOrderAscCreatedAtAsc().forEach(pl -> playlistIds.add(pl.getId()));
         if (playlistIds.isEmpty()) return false;
         return itemRepository.existsByProblemIdAndPlaylistIdIn(problemId, playlistIds);
     }
